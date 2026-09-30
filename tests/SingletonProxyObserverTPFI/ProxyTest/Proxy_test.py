@@ -4,7 +4,7 @@ Módulo de pruebas unitarias para el Patrón Proxy utilizando pytest.
 
 import pytest
 
-from Socket.Proxy import ProxyCorporateData
+from SingletonProxyObserverTPFI.Socket.Proxy import ProxyCorporateData
 
 
 @pytest.fixture
