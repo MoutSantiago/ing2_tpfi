@@ -9,7 +9,7 @@ app = typer.Typer()
 def main(
     port: int = typer.Option(8080, "--port", "-p", help="Puerto del servidor"),
     showLog: bool = typer.Option(
-        False, "--showLog", "-v", help="Activar modo de logs detallados"
+        False, "-v", help="Activar modo de logs detallados"
     ),
 ):
     """Inicia el servidor en el puerto especificado con opción de logs."""
