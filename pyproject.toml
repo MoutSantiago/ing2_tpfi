@@ -1,7 +1,13 @@
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 [tool.ruff]
-line-length = 79          # límite clásico de PEP 8
+line-length = 79
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I"]   # errores pycodestyle, pyflakes, warnings, imports
+select = ["E", "F", "W", "I", "D"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "pep257"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["D"]
