@@ -6,6 +6,50 @@ Todos deben ejecutarse con el ambiente virtual activo (ver [Instalación](instal
 La CI ejecuta exactamente este mismo set de comandos en cada pull request hacia `main`
 (`.github/workflows/ci.yml`), por lo que un PR solo se mergea si toda la battery pasa.
 
+## Flujo de trabajo (GitFlow)
+
+Este proyecto sigue el estándar [GitFlow](https://nvie.com/posts/a-successful-git-branching-model/).
+Todas las ramas deben crearse respetando este modelo para mantener consistencia en el repositorio.
+
+### Ramas principales
+
+- `main`: Rama de producción. Contiene únicamente código estable y listo para desplegar.
+- `develop`: Rama de integración. Aquí se integran todas las funcionalidades en desarrollo antes de pasar a producción.
+
+### Ramas de soporte
+
+| Tipo de rama | Propósito | Convención de nombre | Base | Merge a |
+|--------------|-----------|---------------------|------|---------|
+| `feature` | Nuevas funcionalidades | `feature/<nombre-descriptivo>` | `develop` | `develop` |
+| `bugfix` | Correcciones no urgentes | `bugfix/<nombre-descriptivo>` | `develop` | `develop` |
+| `release` | Preparación de una nueva versión | `release/<versión>` (ej.: `release/1.2.0`) | `develop` | `main` y `develop` |
+| `hotfix` | Correcciones urgentes en producción | `hotfix/<versión>` (ej.: `hotfix/1.1.1`) | `main` | `main` y `develop` |
+
+### Pasos para crear una nueva rama
+
+1. **Actualizar la rama base**:
+   ```sh
+   git checkout develop
+   git pull origin develop
+   ```
+
+2. **Crear y cambiar a la nueva rama**:
+   ```sh
+   git checkout -b feature/<nombre-descriptivo>
+   ```
+
+3. **Hacer los cambios y commits** siguiendo las convenciones del proyecto.
+
+4. **Subir la rama al remoto**:
+   ```sh
+   git push -u origin feature/<nombre-descriptivo>
+   ```
+
+5. **Abrir un Pull Request** hacia la rama base (`develop`, o `main` para hotfixes) cuando esté listo.
+
+> **Nota:** un `hotfix` se crea desde `main`. Después de mergearlo a `main`, hay que integrar esos
+> mismos cambios en `develop` (un `merge` de `main` sobre `develop`) para no perderlos.
+
 ## Atajos
 
 ```sh
