@@ -20,7 +20,7 @@ jobs:
       - run: black --check .
       - run: pycodestyle src
       - run: pydocstyle src
-      - run: mypy src
+      - run: python -m mypy src
       - run: pyright
 
   security:
