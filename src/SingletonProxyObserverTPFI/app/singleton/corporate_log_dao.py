@@ -1,4 +1,17 @@
-"""Hacer run header."""
+"""Módulo encargado del manejo de peticiones a la tabla CorporateLog.
+
+Su función es registrar la pista de auditoría de las acciones realizadas sobre
+el sistema.
+
+Patrón: Singleton
+
+Ingeniería de Software II - UADER FCyT (2026)
+Autores:
+ - Laiño Valentino
+ - Mout Santiago
+ - Sandillú Axel
+Copyright (c) 2026. Licencia MIT (ver LICENSE).
+"""
 
 from __future__ import annotations
 

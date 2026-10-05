@@ -1,6 +1,5 @@
 """Configuracion de Sphinx para la documentacion del proyecto."""
 
-import os
 import sys
 from pathlib import Path
 
