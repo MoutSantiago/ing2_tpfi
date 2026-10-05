@@ -46,7 +46,7 @@ jobs:
       - run: pytest --cov=src --cov-fail-under=85
 
   update-build:
-    if: github.ref == 'refs/heads/develop'
+    if: github.base_ref == 'develop' || github.ref == 'refs/heads/develop'
     needs: [lint, security, tests]
     runs-on: ubuntu-latest
     permissions:
@@ -68,7 +68,7 @@ jobs:
 
   docs:
     # Solo al integrar a main (no en develop)
-    if: github.ref == 'refs/heads/main'
+    if: github.base_ref == 'main'
     needs: [lint, security, tests] # solo si los tres anteriores pasaron
     runs-on: ubuntu-latest
     steps:
