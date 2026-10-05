@@ -42,7 +42,9 @@ Pygments==2.21.0
 pyright==1.1.414
 pytest==9.1.1
 pytest-cov==7.1.0
+pytest-env==1.7.1
 python-dateutil==2.9.0.post0
+python-dotenv==1.2.4
 pytokens==0.4.1
 PyYAML==6.0.3
 requests==2.34.2
