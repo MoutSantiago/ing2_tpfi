@@ -18,22 +18,24 @@ Todas las ramas deben crearse respetando este modelo para mantener consistencia 
 
 ### Ramas de soporte
 
-| Tipo de rama | Propósito | Convención de nombre | Base | Merge a |
-|--------------|-----------|---------------------|------|---------|
-| `feature` | Nuevas funcionalidades | `feature/<nombre-descriptivo>` | `develop` | `develop` |
-| `bugfix` | Correcciones no urgentes | `bugfix/<nombre-descriptivo>` | `develop` | `develop` |
-| `release` | Preparación de una nueva versión | `release/<versión>` (ej.: `release/1.2.0`) | `develop` | `main` y `develop` |
-| `hotfix` | Correcciones urgentes en producción | `hotfix/<versión>` (ej.: `hotfix/1.1.1`) | `main` | `main` y `develop` |
+| Tipo de rama | Propósito                           | Convención de nombre                       | Base      | Merge a            |
+| ------------ | ----------------------------------- | ------------------------------------------ | --------- | ------------------ |
+| `feature`    | Nuevas funcionalidades              | `feature/<nombre-descriptivo>`             | `develop` | `develop`          |
+| `bugfix`     | Correcciones no urgentes            | `bugfix/<nombre-descriptivo>`              | `develop` | `develop`          |
+| `release`    | Preparación de una nueva versión    | `release/<versión>` (ej.: `release/1.2.0`) | `develop` | `main` y `develop` |
+| `hotfix`     | Correcciones urgentes en producción | `hotfix/<versión>` (ej.: `hotfix/1.1.1`)   | `main`    | `main` y `develop` |
 
 ### Pasos para crear una nueva rama
 
 1. **Actualizar la rama base**:
+
    ```sh
    git checkout develop
    git pull origin develop
    ```
 
 2. **Crear y cambiar a la nueva rama**:
+
    ```sh
    git checkout -b feature/<nombre-descriptivo>
    ```
@@ -41,6 +43,7 @@ Todas las ramas deben crearse respetando este modelo para mantener consistencia 
 3. **Hacer los cambios y commits** siguiendo las convenciones del proyecto.
 
 4. **Subir la rama al remoto**:
+
    ```sh
    git push -u origin feature/<nombre-descriptivo>
    ```
@@ -94,8 +97,8 @@ pydocstyle src                  # PEP 257 (docstrings)
 ## Análisis estático de tipos
 
 ```sh
-mypy src                        # igual que en la CI
-mypy src --strict               # chequeo estricto
+python -m mypy src                       # igual que en la CI
+python -m mypy src --strict               # chequeo estricto
 pyright                         # igual que en la CI
 pyright --pythonpath .venv/bin/python   # necesario para resolver boto3/pytest
 ```

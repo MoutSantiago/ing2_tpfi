@@ -70,10 +70,8 @@ class CorporateLogDAO:
         Lanza RuntimeError si se intenta instanciar directamente.
         """
         if type(self)._instance is not None:
-            raise RuntimeError(
-                """No instanciar directamente.
-                Use CorporateLogDAO.get_instance()"""
-            )
+            raise RuntimeError("""No instanciar directamente.
+                Use CorporateLogDAO.get_instance()""")
         try:
             dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
             self._table = dynamodb.Table("CorporateLog")

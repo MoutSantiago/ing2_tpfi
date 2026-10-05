@@ -1,5 +1,10 @@
 [tool.pytest.ini_options]
 pythonpath = ["src"]
+env = [
+    "NO_COLOR=1",
+    "TERM=dumb",
+    "FORCE_COLOR=0"
+]
 
 [tool.pyright]
 include = ["src", "tests", "scripts"]
