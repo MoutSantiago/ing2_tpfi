@@ -40,7 +40,7 @@ class Publisher(ABC):
         """
         pass
 
-    def unsubscribe(observer) -> None:
+    def unsubscribe(self, observer) -> None:
         """Método unsubscribe.
 
         Método utilizado para que un observador se desuscriba del publisher.
@@ -52,7 +52,7 @@ class Publisher(ABC):
         """
         pass
 
-    def notify_subscribers() -> None:
+    def notify_subscribers(self) -> None:
         """Método notify_subscribers.
 
         Método que envía una notificación a todos los suscriptores del
