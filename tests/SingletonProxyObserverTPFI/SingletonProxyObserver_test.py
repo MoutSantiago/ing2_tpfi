@@ -1,7 +1,6 @@
 import pytest
+from SingletonProxyObserverTPFI.singletonproxyobserver import app, main
 from typer.testing import CliRunner
-
-from SingletonProxyObserverTPFI.main import app, main
 
 runner = CliRunner()
 

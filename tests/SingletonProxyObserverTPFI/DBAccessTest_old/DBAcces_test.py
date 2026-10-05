@@ -1,6 +1,6 @@
 import pytest
 
-from SingletonProxyObserverTPFI.DBAccess.DBAccess import (
+from SingletonProxyObserverTPFI.app.DBAccess_old.DBAccess import (
     DBAccess,
     SingletonMeta,
 )
