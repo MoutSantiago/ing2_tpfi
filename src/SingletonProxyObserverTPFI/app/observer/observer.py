@@ -13,16 +13,6 @@ Autores:
 Copyright (c) 2026. Licencia MIT (ver LICENSE).
 """
 
-"""
-Define la interfaz base para los observers del patrón Observer.
-
-El módulo contiene:
-
-- Observer: interfaz que deben implementar todos los observers.
-- ObserverUnavailableError: excepción utilizada cuando un observer
-  no puede recibir una notificación.
-"""
-
 from abc import ABC, abstractmethod
 
 
