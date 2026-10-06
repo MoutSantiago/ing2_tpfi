@@ -60,7 +60,9 @@ def test_uuid_es_solo_lectura():
     )
 
     with pytest.raises(AttributeError):
-        observer.uuid = "otro-uuid"
+        # El error de asignación es intencional: el test verifica que
+        # la propiedad sea de solo lectura.
+        observer.uuid = "otro-uuid"  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def test_update_serializa_y_envia_json():
