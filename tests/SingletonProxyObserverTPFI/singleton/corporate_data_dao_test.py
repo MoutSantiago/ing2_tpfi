@@ -223,9 +223,7 @@ def test_set_crea_registro_nuevo():
     with mock_aws():
         dao = crear_dao()
 
-        resultado = dao.set(
-            "nuevo", {"CUIT": "30-70925411-8"}, "uuid-cliente"
-        )
+        resultado = dao.set("nuevo", {"CUIT": "30-70925411-8"}, "uuid-cliente")
 
         assert resultado["id"] == "nuevo"
         assert resultado["CUIT"] == "30-70925411-8"
@@ -252,9 +250,7 @@ def test_set_modifica_solo_campos_informados():
         tabla().put_item(Item=REGISTRO)
         dao = crear_dao()
 
-        resultado = dao.set(
-            "UADER-FCyT-IS2", {"web": "http://nuevo"}, "uuid"
-        )
+        resultado = dao.set("UADER-FCyT-IS2", {"web": "http://nuevo"}, "uuid")
 
         assert resultado["web"] == "http://nuevo"
         assert resultado["CUIT"] == "30-70925411-8"

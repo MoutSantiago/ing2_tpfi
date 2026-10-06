@@ -58,9 +58,7 @@ class RealDAOStub(CorporateDataInterface):
         self.llamados.append(("get", id, None, uuid))
         return self.respuesta
 
-    def set(
-        self, id: str, data: dict[str, str], uuid: str
-    ) -> dict[str, str]:
+    def set(self, id: str, data: dict[str, str], uuid: str) -> dict[str, str]:
         """Registra la llamada y devuelve la respuesta fija."""
         self.llamados.append(("set", id, data, uuid))
         return dict(self.respuesta, id=id)
