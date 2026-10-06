@@ -90,7 +90,6 @@ class SubscriptionManager(Publisher):
                     observers_to_remove.append(observer)
             for observer in observers_to_remove:
                 self._observers.remove(observer)
-                observer.close()
 
     def publish_change(self, message: dict) -> None:
         """Publica un cambio.
