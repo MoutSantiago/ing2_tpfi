@@ -13,3 +13,65 @@ Autores:
  - Sandillú Axel
 Copyright (c) 2026. Licencia MIT (ver LICENSE).
 """
+
+import json
+import socket
+
+from .observer import Observer, ObserverUnavailableError
+
+
+class ClientObserver(Observer):
+    """Observer concreto asociado a un cliente TCP suscripto."""
+
+    def __init__(self, sock: socket.socket, uuid: str) -> None:
+        """
+        Inicializa el observer.
+
+        Args:
+            sock: Socket del cliente suscripto.
+            uuid: Identificador del cliente.
+        """
+        self._sock = sock
+        self._uuid = uuid
+
+    @property
+    def uuid(self) -> str:
+        """Devuelve el UUID del cliente suscripto."""
+        return self._uuid
+
+    def update(self, message: dict) -> None:
+        """
+        Envía una notificación JSON al cliente.
+
+        Args:
+            message: Mensaje generado por el Publisher.
+
+        Raises:
+            ObserverUnavailableError: si no se puede enviar
+                la notificación.
+        """
+        try:
+            # Serializamos el mensaje a JSON.
+            data = json.dumps(message)
+
+            # Cada mensaje termina en salto de línea para respetar
+            # el protocolo de comunicación definido por el TPFI.
+            data += "\n"
+
+            # Enviamos el mensaje completo por el socket.
+            self._sock.sendall(data.encode("utf-8"))
+
+        except (OSError, TypeError, ValueError) as exc:
+            # El Publisher utilizará esta excepción para detectar
+            # que el cliente ya no está disponible.
+            raise ObserverUnavailableError(
+                f"No se pudo notificar al observer {self._uuid}"
+            ) from exc
+
+    def close(self) -> None:
+        """Cierra el socket del cliente suscripto."""
+        try:
+            self._sock.close()
+        except OSError:
+            # Si el socket ya estaba cerrado, no hacemos nada.
+            pass

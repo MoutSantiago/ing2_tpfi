@@ -16,13 +16,17 @@ Copyright (c) 2026. Licencia MIT (ver LICENSE).
 import json
 import socket
 import threading
+from abc import abstractmethod
 from typing import Any
 
-from SingletonProxyObserverTPFI.app.observer.publisher import Publisher
-
-from .exceptions import DataAccessError, RecordNotFoundError
+from .exceptions import (
+    DataAccessError,
+    ObserverUnavailableError,
+    RecordNotFoundError,
+)
 from .observer.client_observer import ClientObserver
-from .observer.observer import ObserverUnavailableError
+from .observer.publisher import Publisher
+from .proxy.corporate_data_interface import CorporateDataInterface
 
 
 class Server:
@@ -61,7 +65,24 @@ class Server:
         "web",
     }
 
-    class CorporateDataProxy: ...
+    class CorporateDataProxy(CorporateDataInterface):
+        """Contrato mínimo que el Server exige al Proxy.
+
+        El Server no conoce la implementación concreta: solamente
+        necesita las acciones de CorporateDataInterface (get, set,
+        list) más la auditoría de las suscripciones. De este modo
+        cualquier objeto que cumpla este contrato puede inyectarse
+        en el constructor.
+        """
+
+        @abstractmethod
+        def audit_subscription(self, uuid: str) -> None:
+            """Audita la suscripción de un cliente en CorporateLog.
+
+            Args:
+                uuid: identificador del cliente que se suscribe.
+            """
+            pass
 
     def __init__(
         self,

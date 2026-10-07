@@ -421,7 +421,7 @@ def test_handle_subscribe_audita_antes_de_suscribir(
     conn = Mock()
 
     with patch(
-        "SingletonProxyObserverTPFI.server.ClientObserver"
+        "SingletonProxyObserverTPFI.app.server.ClientObserver"
     ) as observer_class:
         observer = Mock()
         observer_class.return_value = observer
@@ -460,7 +460,7 @@ def test_handle_subscribe_no_crea_observer_si_auditoria_falla(
     conn = Mock()
 
     with patch(
-        "SingletonProxyObserverTPFI.server.ClientObserver"
+        "SingletonProxyObserverTPFI.app.server.ClientObserver"
     ) as observer_class:
         with pytest.raises(RuntimeError):
             server._handle_subscribe(

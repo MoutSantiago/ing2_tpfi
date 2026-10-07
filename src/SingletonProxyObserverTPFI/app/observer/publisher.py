@@ -27,7 +27,7 @@ class Publisher(ABC):
     """
 
     @abstractmethod
-    def subscribe(observer) -> None:
+    def subscribe(self, observer) -> None:
         """Método subscribe.
 
         Utilizado para que un observador se suscriba al publisher.
