@@ -15,6 +15,7 @@ Copyright (c) 2026. Licencia MIT (ver LICENSE).
 
 from __future__ import annotations
 
+import logging
 from threading import Lock
 from typing import TYPE_CHECKING, Optional
 
@@ -22,6 +23,8 @@ import boto3
 from botocore.exceptions import ClientError
 
 from SingletonProxyObserverTPFI.app.exceptions import DataAccessError
+
+logger = logging.getLogger(__name__)
 
 # Es false en runtime, donde se ignora la importación
 if TYPE_CHECKING:
@@ -69,15 +72,19 @@ class CorporateLogDAO:
             raise RuntimeError("""No instanciar directamente.
                 Use CorporateLogDAO.get_instance()""")
         try:
+            logger.debug("Conectando a DynamoDB tabla CorporateLog...")
             dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
             self._table = dynamodb.Table("CorporateLog")
             # Verificar que la tabla existe y es accesible
             _ = self._table.table_status
+            logger.info("Conectado a tabla CorporateLog")
         except ClientError as e:
+            logger.error("Error conectando a CorporateLog: %s", e)
             raise DataAccessError(
                 f"No se pudo conectar a la tabla CorporateLog: {e}"
             ) from e
         except Exception as e:
+            logger.exception("Error inesperado al inicializar CorporateLogDAO")
             raise DataAccessError(
                 f"Error inesperado al inicializar CorporateLogDAO: {e}"
             ) from e
@@ -127,6 +134,12 @@ class CorporateLogDAO:
             item_id: El ID del registro afectado (None para list/subscribe).
             timestamp: El timestamp de la acción en formato string.
         """
+        logger.debug(
+            "Escribiendo auditoría: acción=%s uuid=%s item_id=%s",
+            action,
+            uuid,
+            item_id,
+        )
         item = {
             "id": uuid,
             "CPUid": uuid,
@@ -140,11 +153,18 @@ class CorporateLogDAO:
 
         try:
             self._table.put_item(Item=item)
+            logger.info(
+                "Auditoría registrada: acción=%s uuid=%s", action, uuid
+            )
         except ClientError as e:
+            logger.error("Error escribiendo en CorporateLog: %s", e)
             raise DataAccessError(
                 f"Error escribiendo en CorporateLog: {e}"
             ) from e
         except Exception as e:
+            logger.exception(
+                "Error inesperado escribiendo registro de auditoría"
+            )
             raise DataAccessError(
                 f"Error inesperado escribiendo registro de auditoría: {e}"
             ) from e

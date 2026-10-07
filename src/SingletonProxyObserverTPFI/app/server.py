@@ -14,19 +14,76 @@ Copyright (c) 2026. Licencia MIT (ver LICENSE).
 """
 
 import json
+import logging
 import socket
 import threading
-from abc import abstractmethod
-from typing import Any
+from typing import Any, Protocol
 
-from .exceptions import (
+from SingletonProxyObserverTPFI.app.exceptions import (
     DataAccessError,
     ObserverUnavailableError,
     RecordNotFoundError,
 )
-from .observer.client_observer import ClientObserver
-from .observer.publisher import Publisher
-from .proxy.corporate_data_interface import CorporateDataInterface
+from SingletonProxyObserverTPFI.app.observer.client_observer import (
+    ClientObserver,
+)
+from SingletonProxyObserverTPFI.app.observer.publisher import Publisher
+
+logger = logging.getLogger(__name__)
+
+
+class DataProxy(Protocol):
+    """Contrato mínimo que el Server exige al Proxy.
+
+    El Server no conoce la implementación concreta: solamente necesita las
+    acciones de CorporateDataInterface (get, set, list) más la auditoría de las
+    suscripciones. Al ser un Protocol, cualquier objeto que cumpla este
+    contrato puede inyectarse en el constructor sin necesidad de heredar.
+    """
+
+    def get(self, id: str, uuid: str) -> dict[str, str]:
+        """Recupera un registro de CorporateData.
+
+        Args:
+            id: Identificador del registro a recuperar.
+            uuid: UUID del cliente que realiza la petición.
+
+        Returns:
+            Registro solicitado con sus campos como texto.
+        """
+        ...
+
+    def set(self, id: str, data: dict[str, str], uuid: str) -> dict[str, str]:
+        """Crea o modifica un registro de CorporateData.
+
+        Args:
+            id: Identificador del registro a crear o modificar.
+            data: Campos a escribir sobre el registro.
+            uuid: UUID del cliente que realiza la petición.
+
+        Returns:
+            Registro resultante tras aplicar el cambio.
+        """
+        ...
+
+    def list(self, uuid: str) -> list[dict[str, str]]:
+        """Recupera todos los registros de CorporateData.
+
+        Args:
+            uuid: UUID del cliente que realiza la petición.
+
+        Returns:
+            Lista con todos los registros de CorporateData.
+        """
+        ...
+
+    def audit_subscription(self, uuid: str) -> None:
+        """Audita la suscripción de un cliente en CorporateLog.
+
+        Args:
+            uuid: identificador del cliente que se suscribe.
+        """
+        ...
 
 
 class Server:
@@ -65,25 +122,6 @@ class Server:
         "web",
     }
 
-    class CorporateDataProxy(CorporateDataInterface):
-        """Contrato mínimo que el Server exige al Proxy.
-
-        El Server no conoce la implementación concreta: solamente
-        necesita las acciones de CorporateDataInterface (get, set,
-        list) más la auditoría de las suscripciones. De este modo
-        cualquier objeto que cumpla este contrato puede inyectarse
-        en el constructor.
-        """
-
-        @abstractmethod
-        def audit_subscription(self, uuid: str) -> None:
-            """Audita la suscripción de un cliente en CorporateLog.
-
-            Args:
-                uuid: identificador del cliente que se suscribe.
-            """
-            pass
-
     def __init__(
         self,
         # El TPFI exige aceptar conexiones en *:8080 (REQUIREMENTS.md),
@@ -92,7 +130,7 @@ class Server:
         # descuido, se silencia el aviso B104 de bandit.
         host: str = "0.0.0.0",  # nosec B104
         port: int = 8080,
-        data: CorporateDataProxy | None = None,
+        data: DataProxy | None = None,
         publisher: Publisher | None = None,
     ) -> None:
         """
@@ -142,6 +180,8 @@ class Server:
         Raises:
             OSError: si no es posible abrir o utilizar el puerto.
         """
+        logger.info("Iniciando servidor en %s:%d", self._host, self._port)
+
         # Creamos el socket TCP IPv4.
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -165,6 +205,8 @@ class Server:
             # Eliminamos cualquier estado previo de stop.
             self._stop_event.clear()
 
+            logger.debug("Servidor escuchando conexiones...")
+
             while not self._stop_event.is_set():
                 try:
                     # Esperamos una conexión entrante.
@@ -181,6 +223,8 @@ class Server:
                     # Si no se pidió detener el servidor, propagamos
                     # el error porque representa un problema real.
                     raise
+
+                logger.debug("Nueva conexión desde %s:%d", addr[0], addr[1])
 
                 # Cada conexión se procesa en su propio thread.
                 thread = threading.Thread(
@@ -201,6 +245,8 @@ class Server:
 
             if self._sock is sock:
                 self._sock = None
+
+            logger.info("Servidor detenido")
 
     def stop(self) -> None:
         """
@@ -255,8 +301,11 @@ class Server:
             # Decodificamos el JSON.
             request = json.loads(raw_request)
 
+            logger.debug("Petición recibida: %s", request)
+
             # Verificamos que la petición tenga la estructura mínima.
             if not self._validate(request):
+                logger.warning("Petición inválida: %s", request)
                 self._send_error(
                     conn,
                     "Petición inválida.",
@@ -277,16 +326,19 @@ class Server:
 
         except json.JSONDecodeError:
             # El cliente envió algo que no es JSON válido.
+            logger.warning("JSON inválido recibido")
             self._send_error(conn, "JSON inválido.")
 
         except (DataAccessError, RecordNotFoundError) as exc:
             # Errores provenientes del Proxy o de los DAOs.
+            logger.error("Error de acceso a datos: %s", exc)
             self._send_error(conn, str(exc))
 
         except ObserverUnavailableError as exc:
             # En principio el error del observer se maneja en el
             # Publisher. Lo capturamos para evitar que el thread
             # termine mostrando una excepción no controlada.
+            logger.warning("Observer no disponible: %s", exc)
             self._send_error(conn, str(exc))
 
         except (OSError, TimeoutError) as exc:
@@ -294,6 +346,7 @@ class Server:
             #
             # Si el cliente cerró la conexión, simplemente terminamos
             # el procesamiento.
+            logger.warning("Error de socket: %s", exc)
             try:
                 self._send_error(conn, str(exc))
             except OSError:
@@ -305,6 +358,7 @@ class Server:
             # Esta captura es deliberadamente amplia porque el
             # requisito establece que un error de una petición no
             # debe detener al servidor.
+            logger.exception("Error interno procesando petición")
             try:
                 self._send_error(
                     conn,

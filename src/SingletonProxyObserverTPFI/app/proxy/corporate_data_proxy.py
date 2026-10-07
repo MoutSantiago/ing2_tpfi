@@ -15,6 +15,7 @@ Copyright (c) 2026. Licencia MIT (ver LICENSE).
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timezone
 from typing import Optional
 from uuid import uuid4
@@ -28,6 +29,8 @@ from SingletonProxyObserverTPFI.app.proxy.corporate_data_interface import (
 from SingletonProxyObserverTPFI.app.singleton.corporate_log_dao import (
     CorporateLogDAO,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class CorporateDataProxy(CorporateDataInterface):
@@ -103,6 +106,7 @@ class CorporateDataProxy(CorporateDataInterface):
             item_id (Optional[str]): ID del registro afectado; None para
                 list/subscribe, que no afectan a un registro en particular.
         """
+        logger.debug("Auditando acción=%s uuid=%s", action, uuid)
         timestamp = datetime.now(timezone.utc).isoformat()
         self._log.write_entry(
             uuid=uuid,
@@ -129,6 +133,7 @@ class CorporateDataProxy(CorporateDataInterface):
             RecordNotFoundError: Si el registro no existe, propagada desde
                 el objeto real.
         """
+        logger.debug("Proxy get: id=%s uuid=%s", id, uuid)
         self._audit(uuid, "get", id)
         return self._real.get(id, uuid)
 
@@ -154,6 +159,7 @@ class CorporateDataProxy(CorporateDataInterface):
         Raises:
             DataAccessError: Si falla la auditoría o el acceso a los datos.
         """
+        logger.debug("Proxy set: id=%s uuid=%s", id, uuid)
         self._audit(uuid, "set", id)
         registro = self._real.set(id, data, uuid)
 
@@ -185,6 +191,7 @@ class CorporateDataProxy(CorporateDataInterface):
         Raises:
             DataAccessError: Si falla la auditoría.
         """
+        logger.debug("Proxy list: uuid=%s", uuid)
         self._audit(uuid, "list")
         return self._real.list(uuid)
 
@@ -201,4 +208,5 @@ class CorporateDataProxy(CorporateDataInterface):
         Args:
             uuid (str): UUID del cliente que se va a suscribir.
         """
+        logger.debug("Auditando suscripción: uuid=%s", uuid)
         self._audit(uuid, "subscribe")

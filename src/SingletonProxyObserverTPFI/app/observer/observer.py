@@ -15,10 +15,10 @@ Copyright (c) 2026. Licencia MIT (ver LICENSE).
 
 from abc import ABC, abstractmethod
 
-# La excepción vive en .exceptions (allí la define el servidor y la captura
+# La excepción vive en exceptions.py (allí la define el servidor y la captura
 # Server._handle_client). Se re-exporta desde acá para mantener compatibles
 # los imports históricos: from .observer import ObserverUnavailableError
-from ..exceptions import ObserverUnavailableError
+from SingletonProxyObserverTPFI.app.exceptions import ObserverUnavailableError
 
 __all__ = ["Observer", "ObserverUnavailableError"]
 
@@ -29,6 +29,11 @@ class Observer(ABC):
 
     Cualquier clase que quiera ser registrada en un Publisher debe
     implementar el método ``update``.
+
+    Nota: la propiedad ``uuid`` no forma parte del contrato, porque el
+    patrón Observer no la necesita. Solo la usan los publishers concretos
+    para identificar al suscriptor en los logs, y por eso la consultan con
+    ``getattr(observer, "uuid", None)``.
     """
 
     @abstractmethod

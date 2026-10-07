@@ -16,8 +16,20 @@ class TestObserver(Observer):
 
     __test__ = False
 
-    def __init__(self):
+    _uuid: str
+    """UUID del observer de prueba."""
+
+    received_message: dict | None
+    """Último mensaje recibido, None si todavía no recibió ninguno."""
+
+    def __init__(self, uuid: str = "test-uuid"):
+        self._uuid = uuid
         self.received_message = None
+
+    @property
+    def uuid(self) -> str:
+        """Devuelve el UUID del observer."""
+        return self._uuid
 
     def update(self, message: dict) -> None:
         self.received_message = message

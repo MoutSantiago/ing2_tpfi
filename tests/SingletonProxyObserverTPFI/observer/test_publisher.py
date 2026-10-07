@@ -2,7 +2,24 @@
 
 import pytest
 
+from SingletonProxyObserverTPFI.app.observer.observer import Observer
 from SingletonProxyObserverTPFI.app.observer.publisher import Publisher
+
+
+class _ObserverDePrueba(Observer):
+    """Observer concreto mínimo para los tests.
+
+    Solo implementa update porque es el único método que exige el
+    contrato de Observer.
+    """
+
+    def __init__(self) -> None:
+        """Inicializa el mensaje recibido en None."""
+        self.received: dict | None = None
+
+    def update(self, message: dict) -> None:
+        """Guarda el mensaje recibido."""
+        self.received = message
 
 
 class _PublisherDePrueba(Publisher):
@@ -10,9 +27,9 @@ class _PublisherDePrueba(Publisher):
 
     def __init__(self) -> None:
         """Inicializa la lista vacía de suscriptores."""
-        self.suscriptores = []
+        self.suscriptores: list[Observer] = []
 
-    def subscribe(self, observer) -> None:
+    def subscribe(self, observer: Observer) -> None:
         """Agrega un observer a la lista de suscriptores."""
         self.suscriptores.append(observer)
 
@@ -30,7 +47,7 @@ def test_publisher_concreto_puede_suscribir():
     """Verifica que una subclase concreta pueda suscribir observers."""
 
     publisher = _PublisherDePrueba()
-    observer = object()
+    observer = _ObserverDePrueba()
 
     publisher.subscribe(observer)
 
@@ -44,7 +61,7 @@ def test_unsubscribe_de_la_clase_base_no_falla():
     publisher = _PublisherDePrueba()
 
     # La implementación base no hace nada si el observer no estaba.
-    resultado = publisher.unsubscribe(object())
+    resultado = publisher.unsubscribe(_ObserverDePrueba())
 
     assert resultado is None
 

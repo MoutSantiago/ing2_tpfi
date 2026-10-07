@@ -15,7 +15,7 @@ Copyright (c) 2026. Licencia MIT (ver LICENSE).
 
 from abc import ABC, abstractmethod
 
-from .observer import Observer
+from SingletonProxyObserverTPFI.app.observer.observer import Observer
 
 
 class Publisher(ABC):
