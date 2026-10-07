@@ -23,6 +23,12 @@ from .observer import Observer, ObserverUnavailableError
 class ClientObserver(Observer):
     """Observer concreto asociado a un cliente TCP suscripto."""
 
+    _sock: socket.socket
+    """Socket del cliente suscripto."""
+
+    _uuid: str
+    """UUID del cliente suscripto."""
+
     def __init__(self, sock: socket.socket, uuid: str) -> None:
         """
         Inicializa el observer.

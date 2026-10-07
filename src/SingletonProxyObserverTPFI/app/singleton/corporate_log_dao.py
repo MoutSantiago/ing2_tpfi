@@ -21,15 +21,11 @@ from typing import TYPE_CHECKING, Optional
 import boto3
 from botocore.exceptions import ClientError
 
+from SingletonProxyObserverTPFI.app.exceptions import DataAccessError
+
 # Es false en runtime, donde se ignora la importación
 if TYPE_CHECKING:
     from mypy_boto3_dynamodb.service_resource import Table
-
-
-class DataAccessError(Exception):
-    """Excepción personalizada para errores de acceso a datos."""
-
-    pass
 
 
 class CorporateLogDAO:

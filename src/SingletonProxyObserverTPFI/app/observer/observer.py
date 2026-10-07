@@ -44,4 +44,4 @@ class Observer(ABC):
             ObserverUnavailableError: si el observer no puede recibir
                 la notificación.
         """
-        raise NotImplementedError
+        pass
