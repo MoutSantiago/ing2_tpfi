@@ -86,7 +86,11 @@ class Server:
 
     def __init__(
         self,
-        host: str = "0.0.0.0",
+        # El TPFI exige aceptar conexiones en *:8080 (REQUIREMENTS.md),
+        # por eso el servidor escucha por defecto en todas las
+        # interfaces. Al ser una decisión de la especificación y no un
+        # descuido, se silencia el aviso B104 de bandit.
+        host: str = "0.0.0.0",  # nosec B104
         port: int = 8080,
         data: CorporateDataProxy | None = None,
         publisher: Publisher | None = None,
