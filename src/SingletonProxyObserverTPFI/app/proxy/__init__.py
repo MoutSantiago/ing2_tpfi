@@ -1,1 +1,1 @@
-"""Implementación del patrón Proxy (interfaz y proxy de CorporateData)."""
+"""Implementación del patrón Proxy para los datos corporativos."""
