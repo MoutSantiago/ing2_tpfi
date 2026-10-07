@@ -15,17 +15,12 @@ Copyright (c) 2026. Licencia MIT (ver LICENSE).
 
 from abc import ABC, abstractmethod
 
+# La excepción vive en .exceptions (allí la define el servidor y la captura
+# Server._handle_client). Se re-exporta desde acá para mantener compatibles
+# los imports históricos: from .observer import ObserverUnavailableError
+from ..exceptions import ObserverUnavailableError
 
-class ObserverUnavailableError(Exception):
-    """
-    Excepción lanzada cuando un observer no puede recibir una notificación.
-
-    Esta excepción permite que el Publisher detecte que un observer
-    dejó de estar disponible y pueda eliminarlo de la lista de
-    suscriptores sin interrumpir la notificación al resto.
-    """
-
-    pass
+__all__ = ["Observer", "ObserverUnavailableError"]
 
 
 class Observer(ABC):
