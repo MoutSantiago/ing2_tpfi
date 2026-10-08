@@ -15,6 +15,8 @@ Copyright (c) 2026. Licencia MIT (ver LICENSE).
 
 from abc import ABC, abstractmethod
 
+from SingletonProxyObserverTPFI.app.observer.observer import Observer
+
 
 class Publisher(ABC):
     """Clase abstracta / interfaz publisher.
@@ -27,11 +29,11 @@ class Publisher(ABC):
     """
 
     @abstractmethod
-    def subscribe(self, observer) -> None:
+    def subscribe(self, observer: Observer) -> None:
         """Método subscribe.
 
         Utilizado para que un observador se suscriba al publisher.
-        Agrega el observer a la lista de suscriptores, de modo que reciba las
+        Agrega el observer a la lista de suscriptores, de modo que recibe las
         notificaciones posteriores.
 
         Args:
@@ -40,7 +42,7 @@ class Publisher(ABC):
         """
         pass
 
-    def unsubscribe(self, observer) -> None:
+    def unsubscribe(self, observer: Observer) -> None:
         """Método unsubscribe.
 
         Método utilizado para que un observador se desuscriba del publisher.

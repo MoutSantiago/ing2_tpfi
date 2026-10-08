@@ -15,13 +15,25 @@ Copyright (c) 2026. Licencia MIT (ver LICENSE).
 """
 
 import json
+import logging
 import socket
 
-from .observer import Observer, ObserverUnavailableError
+from SingletonProxyObserverTPFI.app.observer.observer import (
+    Observer,
+    ObserverUnavailableError,
+)
+
+logger = logging.getLogger(__name__)
 
 
 class ClientObserver(Observer):
     """Observer concreto asociado a un cliente TCP suscripto."""
+
+    _sock: socket.socket
+    """Socket del cliente suscripto."""
+
+    _uuid: str
+    """UUID del cliente suscripto."""
 
     def __init__(self, sock: socket.socket, uuid: str) -> None:
         """
@@ -50,6 +62,7 @@ class ClientObserver(Observer):
             ObserverUnavailableError: si no se puede enviar
                 la notificación.
         """
+        logger.debug("Enviando notificación a observer %s", self._uuid)
         try:
             # Serializamos el mensaje a JSON.
             data = json.dumps(message)
@@ -64,12 +77,16 @@ class ClientObserver(Observer):
         except (OSError, TypeError, ValueError) as exc:
             # El Publisher utilizará esta excepción para detectar
             # que el cliente ya no está disponible.
+            logger.warning(
+                "No se pudo notificar al observer %s: %s", self._uuid, exc
+            )
             raise ObserverUnavailableError(
                 f"No se pudo notificar al observer {self._uuid}"
             ) from exc
 
     def close(self) -> None:
         """Cierra el socket del cliente suscripto."""
+        logger.debug("Cerrando conexión del observer %s", self._uuid)
         try:
             self._sock.close()
         except OSError:

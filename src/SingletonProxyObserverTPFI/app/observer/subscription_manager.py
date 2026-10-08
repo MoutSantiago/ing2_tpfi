@@ -14,10 +14,32 @@ Autores:
 Copyright (c) 2026. Licencia MIT (ver LICENSE).
 """
 
+import logging
 from threading import RLock
 
-from .observer import Observer, ObserverUnavailableError
-from .publisher import Publisher
+from SingletonProxyObserverTPFI.app.observer.observer import (
+    Observer,
+    ObserverUnavailableError,
+)
+from SingletonProxyObserverTPFI.app.observer.publisher import Publisher
+
+logger = logging.getLogger(__name__)
+
+
+def _identificador(observer: Observer) -> str:
+    """Devuelve el identificador del observer para los logs.
+
+    La propiedad uuid no forma parte del contrato de Observer, por lo que
+    se consulta con getattr y se degrada a "<sin uuid>" si el observer
+    concreto no la expone.
+
+    Args:
+        observer: Observer al que se le quiere identificar.
+
+    Returns:
+        El uuid del observer o "<sin uuid>" si no lo expone.
+    """
+    return str(getattr(observer, "uuid", "<sin uuid>"))
 
 
 class SubscriptionManager(Publisher):
@@ -60,6 +82,11 @@ class SubscriptionManager(Publisher):
         with self._lock:
             if observer not in self._observers:
                 self._observers.append(observer)
+                logger.info(
+                    "Observer %s suscrito. Total: %d",
+                    _identificador(observer),
+                    len(self._observers),
+                )
 
     def unsubscribe(self, observer: Observer) -> None:
         """Elimina al observer de la lista de suscriptores.
@@ -73,6 +100,11 @@ class SubscriptionManager(Publisher):
         with self._lock:
             if observer in self._observers:
                 self._observers.remove(observer)
+                logger.info(
+                    "Observer %s desuscrito. Total: %d",
+                    _identificador(observer),
+                    len(self._observers),
+                )
 
     def notify_subscribers(self) -> None:
         """Envía _last_change a todos los suscriptores.
@@ -87,9 +119,18 @@ class SubscriptionManager(Publisher):
                 try:
                     observer.update(self._last_change)
                 except ObserverUnavailableError:
+                    logger.warning(
+                        "Observer %s no disponible, eliminando",
+                        _identificador(observer),
+                    )
                     observers_to_remove.append(observer)
             for observer in observers_to_remove:
                 self._observers.remove(observer)
+                logger.info(
+                    "Observer %s eliminado por no disponible. Total: %d",
+                    _identificador(observer),
+                    len(self._observers),
+                )
 
     def publish_change(self, message: dict) -> None:
         """Publica un cambio.
@@ -100,6 +141,7 @@ class SubscriptionManager(Publisher):
         Args:
             message (dict): Mensaje a publicar.
         """
+        logger.debug("Publicando cambio: %s", message)
         with self._lock:
             self._last_change = message
             self.notify_subscribers()

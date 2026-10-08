@@ -15,6 +15,7 @@ Copyright (c) 2026. Licencia MIT (ver LICENSE).
 
 from __future__ import annotations
 
+import logging
 from threading import Lock
 from typing import TYPE_CHECKING, Any, Optional
 
@@ -30,6 +31,8 @@ from SingletonProxyObserverTPFI.app.exceptions import (
 from SingletonProxyObserverTPFI.app.proxy.corporate_data_interface import (
     CorporateDataInterface,
 )
+
+logger = logging.getLogger(__name__)
 
 # Es false en runtime, donde se ignora la importación
 if TYPE_CHECKING:
@@ -109,17 +112,23 @@ class CorporateDataDAO(CorporateDataInterface):
             raise RuntimeError("""No instanciar directamente.
                 Use CorporateDataDAO.get_instance()""")
         try:
+            logger.debug("Conectando a DynamoDB tabla %s...", NOMBRE_TABLA)
             dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
             self._table = dynamodb.Table(NOMBRE_TABLA)
             # Verificar que la tabla existe y es accesible. Cualquier error
             # acá (tabla inexistente, sin permisos) se traduce en
             # DataAccessError para que las capas superiores no vean boto3.
             _ = self._table.table_status
+            logger.info("Conectado a tabla %s", NOMBRE_TABLA)
         except (ClientError, BotoCoreError) as e:
+            logger.error("Error conectando a %s: %s", NOMBRE_TABLA, e)
             raise DataAccessError(
                 f"No se pudo conectar a la tabla {NOMBRE_TABLA}: {e}"
             ) from e
         except Exception as e:
+            logger.exception(
+                "Error inesperado al inicializar CorporateDataDAO"
+            )
             raise DataAccessError(
                 f"Error inesperado al inicializar CorporateDataDAO: {e}"
             ) from e
@@ -186,9 +195,11 @@ class CorporateDataDAO(CorporateDataInterface):
             RecordNotFoundError: Si no existe un registro con esa clave.
             DataAccessError: Si falla el acceso a la base de datos.
         """
+        logger.debug("Obteniendo registro con %s='%s'", CLAVE, id)
         try:
             respuesta = self._table.get_item(Key={CLAVE: id})
         except (ClientError, BotoCoreError) as e:
+            logger.error("Error leyendo de %s: %s", NOMBRE_TABLA, e)
             raise DataAccessError(
                 f"Error leyendo de {NOMBRE_TABLA}: {e}"
             ) from e
@@ -197,6 +208,7 @@ class CorporateDataDAO(CorporateDataInterface):
         if item is None:
             # Caso excepcional por definición del enunciado: el Server lo
             # convierte en la respuesta "Error" para el cliente.
+            logger.warning("Registro no encontrado con %s='%s'", CLAVE, id)
             raise RecordNotFoundError(
                 f"No existe un registro con {CLAVE}='{id}' en {NOMBRE_TABLA}"
             )
@@ -221,6 +233,7 @@ class CorporateDataDAO(CorporateDataInterface):
         Raises:
             DataAccessError: Si falla el acceso a la base de datos.
         """
+        logger.debug("Escribiendo registro con %s='%s'", CLAVE, id)
         try:
             # Se lee el registro previo para poder modificar solo los campos
             # informados. Si no existe, previo queda en None.
@@ -228,6 +241,7 @@ class CorporateDataDAO(CorporateDataInterface):
 
             if previo is None:
                 # Registro nuevo: los campos no informados quedan en blanco.
+                logger.debug("Creando registro nuevo con %s='%s'", CLAVE, id)
                 registro: dict[str, Any] = {campo: "" for campo in CAMPOS}
             else:
                 # Registro existente: solo se sobreescriben los campos de data.
@@ -236,7 +250,11 @@ class CorporateDataDAO(CorporateDataInterface):
             registro.update(data)
             registro[CLAVE] = id
             self._table.put_item(Item=registro)
+            logger.info(
+                "Registro con %s='%s' escrito correctamente", CLAVE, id
+            )
         except (ClientError, BotoCoreError) as e:
+            logger.error("Error escribiendo en %s: %s", NOMBRE_TABLA, e)
             raise DataAccessError(
                 f"Error escribiendo en {NOMBRE_TABLA}: {e}"
             ) from e
@@ -262,6 +280,7 @@ class CorporateDataDAO(CorporateDataInterface):
         Raises:
             DataAccessError: Si falla el acceso a la base de datos.
         """
+        logger.debug("Listando todos los registros de %s", NOMBRE_TABLA)
         registros: list[dict[str, str]] = []
         # None inicia el recorrido desde el principio de la tabla.
         clave_inicio: Optional[dict[str, Any]] = None
@@ -285,6 +304,10 @@ class CorporateDataDAO(CorporateDataInterface):
                 if not clave_inicio:
                     break
         except (ClientError, BotoCoreError) as e:
+            logger.error("Error listando %s: %s", NOMBRE_TABLA, e)
             raise DataAccessError(f"Error listando {NOMBRE_TABLA}: {e}") from e
 
+        logger.info(
+            "Listados %d registros de %s", len(registros), NOMBRE_TABLA
+        )
         return registros
