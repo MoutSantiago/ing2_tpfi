@@ -2,7 +2,7 @@
 
 **Trabajo Práctico Final Integrador — Patrón Proxy / Singleton / Observer en entorno AWS**
 
-Ingeniería de Software II — UADER-FCyT-IS2 (2024)
+Ingeniería de Software II — UADER-FCyT-IS2 (2026)
 
 ---
 
@@ -12,10 +12,10 @@ Sistema distribuido de datos centralizados que expone los datos corporativos de 
 institución (dirección oficial, CUIT, teléfono de contacto e identificador único de
 secuencia) a través de un servidor de aplicaciones, sobre dos tablas de **AWS DynamoDB**:
 
-| Tabla           | Descripción                                                             |
-| --------------- | ----------------------------------------------------------------------- |
-| `CorporateData` | Contiene los datos centralizados.                                       |
-| `CorporateLog`  | Contiene la pista de auditoría de los accesos y las modificaciones.    |
+| Tabla           | Descripción                                                         |
+| --------------- | ------------------------------------------------------------------- |
+| `CorporateData` | Contiene los datos centralizados.                                   |
+| `CorporateLog`  | Contiene la pista de auditoría de los accesos y las modificaciones. |
 
 El sistema implementa tres funciones principales: **recuperar** datos corporativos
 (`get`), **modificar** datos corporativos (`set`) y **listar** la base completa
@@ -46,11 +46,11 @@ Los directorios `src/SingletonClient/` y `src/ObserverClient/` están reservados
 **no contienen implementación**. Los entry points `singletonclient.py` y
 `observerclient.py` quedan pendientes de desarrollo.
 
-| Programa            | Acción         | Estado |
-| ------------------- | -------------- | ------ |
+| Programa                    | Acción                               | Estado          |
+| --------------------------- | ------------------------------------ | --------------- |
 | `singletonproxyobserver.py` | `get` / `set` / `list` / `subscribe` | ✅ Implementado |
-| `singletonclient.py`         | `get` / `set` / `list`                  | ⏳ Pendiente |
-| `observerclient.py`          | `subscribe`                             | ⏳ Pendiente |
+| `singletonclient.py`        | `get` / `set` / `list`               | ⏳ Pendiente    |
+| `observerclient.py`         | `subscribe`                          | ⏳ Pendiente    |
 
 #### Trabajo pendiente
 
@@ -61,7 +61,7 @@ Los directorios `src/SingletonClient/` y `src/ObserverClient/` están reservados
 - [ ] Implementar `SingletonClient` con los argumentos `-i`, `-o` y `-v`.
 - [ ] Implementar `ObserverClient` con los argumentos `-s`, `-p`, `-o` y `-v`,
       incluyendo la reconexión cada 30 segundos (parametrizable).
-- [ ] Casos de prueba de aceptación de la sección *Validación y Verificación* del
+- [ ] Casos de prueba de aceptación de la sección _Validación y Verificación_ del
       enunciado (argumentos malformados, servidor caído, doble levantamiento del
       servidor, verificación de los patrones).
 - [ ] Diagramas UML de actividad (proxy) y de estado (observer).
@@ -79,12 +79,12 @@ Servidor TCP  ──►  CorporateDataProxy  ──►  CorporateDataDAO   (Dyna
          └──►  SubscriptionManager ──► ClientObserver   (patrón Observer)
 ```
 
-| Capa                        | Patrón      | Responsabilidad                                                                     |
-| --------------------------- | ----------- | ----------------------------------------------------------------------------------- |
-| `app/server.py`             | —           | Escucha TCP, valida el JSON recibido y deriva la petición según su `ACTION`.          |
-| `app/proxy/`                | **Proxy**   | Aplica las reglas de negocio: audita **antes** de operar y notifica los cambios.     |
-| `app/singleton/`            | **Singleton**| Acceso único y thread-safe a las tablas `CorporateData` y `CorporateLog`.             |
-| `app/observer/`             | **Observer**| Gestiona las suscripciones y difunde las notificaciones a los clientes suscriptos.   |
+| Capa             | Patrón        | Responsabilidad                                                                    |
+| ---------------- | ------------- | ---------------------------------------------------------------------------------- |
+| `app/server.py`  | —             | Escucha TCP, valida el JSON recibido y deriva la petición según su `ACTION`.       |
+| `app/proxy/`     | **Proxy**     | Aplica las reglas de negocio: audita **antes** de operar y notifica los cambios.   |
+| `app/singleton/` | **Singleton** | Acceso único y thread-safe a las tablas `CorporateData` y `CorporateLog`.          |
+| `app/observer/`  | **Observer**  | Gestiona las suscripciones y difunde las notificaciones a los clientes suscriptos. |
 
 Decisiones de diseño relevantes:
 
@@ -102,12 +102,12 @@ Comunicación por **socket TCP**, intercambiando mensajes JSON terminados en `\n
 
 ### Peticiones
 
-| Acción       | Campos mínimos                                | Respuesta                              |
-| ------------ | --------------------------------------------- | -------------------------------------- |
-| `get`        | `UUID`, `ACTION`, `ID`                        | Registro solicitado o `{"Error": ...}` |
-| `set`        | `UUID`, `ACTION`, `ID` + al menos un campo    | Registro resultante o `{"Error": ...}` |
-| `list`       | `UUID`, `ACTION` (sin `ID`)                   | Array con todos los registros          |
-| `subscribe`  | `UUID`, `ACTION`                              | Sin respuesta; la conexión queda abierta |
+| Acción      | Campos mínimos                             | Respuesta                                |
+| ----------- | ------------------------------------------ | ---------------------------------------- |
+| `get`       | `UUID`, `ACTION`, `ID`                     | Registro solicitado o `{"Error": ...}`   |
+| `set`       | `UUID`, `ACTION`, `ID` + al menos un campo | Registro resultante o `{"Error": ...}`   |
+| `list`      | `UUID`, `ACTION` (sin `ID`)                | Array con todos los registros            |
+| `subscribe` | `UUID`, `ACTION`                           | Sin respuesta; la conexión queda abierta |
 
 Los campos del tuple `CorporateData` son: `id` (clave de partición), `cp`, `CUIT`,
 `domicilio`, `idreq`, `idSeq`, `localidad`, `provincia`, `sede`, `seqID`, `telefono` y
