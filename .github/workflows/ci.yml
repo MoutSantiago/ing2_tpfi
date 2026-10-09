@@ -2,7 +2,9 @@ name: CI/CD
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, develop]
+  push:
+    branches: [develop]
 
 jobs:
   lint:
@@ -18,7 +20,7 @@ jobs:
       - run: black --check .
       - run: pycodestyle src
       - run: pydocstyle src
-      - run: mypy src
+      - run: python -m mypy src
       - run: pyright
 
   security:
@@ -43,7 +45,31 @@ jobs:
       - run: pip install -r requirements.txt
       - run: pytest --cov=src --cov-fail-under=85
 
+  update-build:
+    if: github.base_ref == 'develop' || github.ref == 'refs/heads/develop'
+    needs: [lint, security, tests]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: update-build-${{ github.ref }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.ref || github.ref_name }}
+          fetch-depth: 0 # Necesario para evitar errores al hacer git push
+      - run: echo $(( $(cat BUILD 2>/dev/null || echo 0) + 1 )) > BUILD
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add BUILD
+          git commit -m "chore: BUILD $(cat BUILD) [skip ci]"
+          git push
+
   docs:
+    # Solo al integrar a main (no en develop)
+    if: github.base_ref == 'main'
     needs: [lint, security, tests] # solo si los tres anteriores pasaron
     runs-on: ubuntu-latest
     steps:
