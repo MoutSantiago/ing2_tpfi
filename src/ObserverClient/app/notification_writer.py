@@ -1,7 +1,7 @@
-"""Módulo que implementa la lógica del programa suscriptor.
+"""Módulo encargado de mostrar cada notificación recibida del servidor.
 
-Se conecta al servidor, envía la acción subscribe, queda escuchando las
-notificaciones y las muestra con NotificationWriter.
+Está separada de ObserverClient para que este no conozca los detalles de la
+salida, y para poder reemplazarla por un mock en los tests.
 
 Ingeniería de Software II - UADER FCyT (2026)
 Autores:
