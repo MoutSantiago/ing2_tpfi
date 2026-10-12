@@ -17,8 +17,7 @@ from typing import Optional
 
 class NotificationWriter:
     """
-    Escribe notificaciones JSON por pantalla y, opcionalmente,
-    en un archivo de salida.
+    Escribe notificaciones JSON por pantalla y, opcionalmente, en un archivo.
 
     Attributes:
         _output_path (Optional[str]): Ruta del archivo donde se
@@ -55,8 +54,7 @@ class NotificationWriter:
 
     def write(self, message: dict) -> None:
         """
-        Muestra una notificación y, si corresponde, la guarda
-        en el archivo configurado.
+        Muestra una notificación y, si corresponde, la guarda en el archivo.
 
         Args:
             message: Diccionario con los datos de la notificación.
