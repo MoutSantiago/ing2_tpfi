@@ -89,11 +89,11 @@ python3 singletonproxyobserver.py --help
 
 ### Códigos de salida
 
-| Código | Significado                                                                     |
-| ------ | ------------------------------------------------------------------------------- |
+| Código | Significado                                                                          |
+| ------ | ------------------------------------------------------------------------------------ |
 | `0`    | Terminación normal. Ocurre al cancelar con `Ctrl+C`, que dispara el apagado ordenado |
-| `1`    | Error de ejecución: puerto ya ocupado o no se pudo acceder a DynamoDB           |
-| `2`    | Argumentos malformados (lo devuelve Typer por defecto)                          |
+| `1`    | Error de ejecución: puerto ya ocupado o no se pudo acceder a DynamoDB                |
+| `2`    | Argumentos malformados (lo devuelve Typer por defecto)                               |
 
 Los errores fatales de arranque se informan con un mensaje claro, nunca con un traceback.
 
@@ -176,6 +176,34 @@ línea conforme llega:
 python3 -c "import socket; s=socket.create_connection(('localhost',8080),5); s.sendall(b'{\"UUID\":\"cliente-2\",\"ACTION\":\"subscribe\"}\n'); f=s.makefile('rb'); [print(l.decode().strip()) for l in f]"
 ```
 
+### Sin `nc` para windows
+
+Si no tenés `netcat`, podés mandar las peticiones con Python:
+
+`list`
+
+```sh
+$c = [Net.Sockets.TcpClient]::new('localhost',8080); $s = $c.GetStream(); $w = [IO.StreamWriter]::new($s); $r = [IO.StreamReader]::new($s); $w.WriteLine('{"UUID":"cliente-1","ACTION":"list"}'); $w.Flush(); $r.ReadLine(); $c.Close()
+```
+
+`get`
+
+```sh
+$c=[Net.Sockets.TcpClient]::new('localhost',8080);$s=$c.GetStream();$w=[IO.StreamWriter]::new($s);$r=[IO.StreamReader]::new($s);$w.WriteLine('{"UUID":"cliente-1","ACTION":"get","ID":"1"}');$w.Flush();$r.ReadLine();$c.Close()
+```
+
+`set`
+
+```sh
+$c=[Net.Sockets.TcpClient]::new('localhost',8080);$s=$c.GetStream();$w=[IO.StreamWriter]::new($s);$r=[IO.StreamReader]::new($s);$w.WriteLine('{"UUID":"cliente-1","ACTION":"set","ID":"1","CUIT":"30-12345678-9","sede":"Central"}');$w.Flush();$r.ReadLine();$c.Close()
+```
+
+`suscribe`
+
+```sh
+$c=[Net.Sockets.TcpClient]::new('localhost',8080);$s=$c.GetStream();$w=[IO.StreamWriter]::new($s);$r=[IO.StreamReader]::new($s);$w.WriteLine('{"UUID":"cliente-2","ACTION":"subscribe"}');$w.Flush();while(($l=$r.ReadLine()) -ne $null){$l}
+```
+
 ## Tests
 
 ```sh
@@ -249,6 +277,13 @@ python -m mypy src && \
 pyright && \
 bandit -r src && \
 pytest --cov=src --cov-fail-under=85
+```
+
+## Ejecución completa con windows (replica de la CI)
+
+```sh
+$cmds = { ruff check . }, { black --check . }, { pycodestyle src }, { pydocstyle src }, { python -m mypy src }, { pyright }, { bandit -r src }, { pytest --cov=src --cov-fail-under=85 }
+foreach ($c in $cmds) { & $c; if ($LASTEXITCODE -ne 0) { break } }
 ```
 
 ## Agregar una dependencia
