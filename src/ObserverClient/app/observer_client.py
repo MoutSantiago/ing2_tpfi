@@ -23,6 +23,8 @@ from ObserverClient.app.server_connection import ServerConnection
 
 DEFAULT_RETRY_INTERVAL = 30
 
+logger = logging.getLogger(__name__)
+
 
 class ObserverClient:
     """Cliente suscriptor remoto del servidor.
@@ -33,17 +35,34 @@ class ObserverClient:
     intervalo y vuelve a intentar, reenviando la suscripción en cada
     reconexión. Solo termina por cancelación manual (stop()) o por una
     excepción distinta del corte de la conexión.
-
-    Attributes:
-        _host (str): Nombre o dirección del servidor. Solo para los logs.
-        _port (int): Puerto del servidor. Solo para los logs.
-        _uuid (str): Identificador de la CPU donde se ejecuta el programa.
-        _retry_interval (int): Segundos de espera entre intentos.
-        _connection (ServerConnection): Objeto que maneja el socket TCP.
-        _writer (NotificationWriter): Objeto que muestra cada notificación.
-        _stop_event (threading.Event): Indica que se pidió terminar y
-            permite interrumpir la espera entre reintentos.
     """
+
+    _host: str
+    """Atributo privado de instancia con el nombre o la dirección del
+    servidor. Solo para los logs."""
+
+    _port: int
+    """Atributo privado de instancia con el puerto del servidor.
+    Solo para los logs."""
+
+    _uuid: str
+    """Atributo privado de instancia con el identificador de la CPU
+    donde se ejecuta el programa."""
+
+    _retry_interval: int
+    """Atributo privado de instancia con los segundos de espera
+    entre intentos."""
+
+    _connection: ServerConnection
+    """Atributo privado de instancia con el objeto que maneja el socket TCP."""
+
+    _writer: NotificationWriter
+    """Atributo privado de instancia con el objeto que muestra cada
+    notificación."""
+
+    _stop_event: threading.Event
+    """Atributo privado de instancia que indica que se pidió terminar y
+    permite interrumpir la espera entre reintentos."""
 
     def __init__(
         self,
@@ -105,8 +124,8 @@ class ObserverClient:
         # El bucle se repite mientras no se haya pedido detener el programa.
         while not self._stop_event.is_set():
             try:
-                logging.info(
-                    f"Conectando al servidor {self._host}:{self._port}"
+                logger.info(
+                    "Conectando al servidor %s:%d", self._host, self._port
                 )
                 self._connection.connect()
                 self._subscribe()
@@ -114,9 +133,11 @@ class ObserverClient:
             except ConnectionLostError as error:
                 # El corte de la conexión no termina el programa: se
                 # registra como advertencia y se reintenta más abajo.
-                logging.warning(
-                    f"Se perdió la conexión con {self._host}:{self._port}: "
-                    f"{error}"
+                logger.warning(
+                    "Se perdió la conexión con %s:%d: %s",
+                    self._host,
+                    self._port,
+                    error,
                 )
             finally:
                 # La conexión se cierra siempre al salir de cada intento.
@@ -145,6 +166,8 @@ class ObserverClient:
         if self._stop_event.is_set():
             return
 
+        logger.info("Deteniendo el cliente...")
+
         # Activar el evento despierta a _wait_to_retry sin esperar el
         # intervalo completo y hace que el bucle de run() no reintente.
         self._stop_event.set()
@@ -161,7 +184,7 @@ class ObserverClient:
                 "subscribe". No incluye ID, porque el enunciado solo pide
                 UUID y acción.
         """
-        return {"uuid": self._uuid, "action": "subscribe"}
+        return {"UUID": self._uuid, "ACTION": "subscribe"}
 
     def _subscribe(self) -> None:
         """Envía la solicitud de suscripción.
@@ -171,7 +194,10 @@ class ObserverClient:
                 ServerConnection.send).
         """
         # send() ya traduce los errores de socket a ConnectionLostError.
-        self._connection.send(self._build_request())
+        request = self._build_request()
+        logger.debug("Enviando suscripción: %s", request)
+        self._connection.send(request)
+        logger.info("Suscripción enviada a %s:%d", self._host, self._port)
 
     def _listen(self) -> None:
         """Bucle de escucha de notificaciones.
@@ -190,8 +216,10 @@ class ObserverClient:
             except ValueError as error:
                 # La conexión sigue sana: se descarta el mensaje inválido
                 # y se sigue esperando la próxima notificación.
-                logging.warning(f"Se recibió un mensaje inválido: {error}")
+                logger.warning("Se recibió un mensaje inválido: %s", error)
                 continue
+
+            logger.debug("Notificación recibida: %s", message)
 
             # write() puede lanzar OSError (por ejemplo, al escribir el
             # archivo de salida). Esa excepción no se captura: se propaga.
@@ -203,7 +231,7 @@ class ObserverClient:
         Usa el evento de parada para poder interrumpir la espera: si stop()
         se invoca mientras se espera, la espera termina de inmediato.
         """
-        logging.info(
-            f"Reintentando conexión en {self._retry_interval} segundos"
+        logger.info(
+            "Reintentando conexión en %d segundos", self._retry_interval
         )
         self._stop_event.wait(self._retry_interval)

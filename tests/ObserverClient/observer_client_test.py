@@ -115,8 +115,8 @@ class TestBuildRequest:
 
     def test_incluye_uuid_y_accion(self, client):
         assert client._build_request() == {
-            "uuid": client._uuid,
-            "action": "subscribe",
+            "UUID": client._uuid,
+            "ACTION": "subscribe",
         }
 
     def test_no_incluye_id(self, client):
@@ -129,7 +129,7 @@ class TestSubscribe:
     def test_envia_la_solicitud(self, client, connection):
         client._subscribe()
         connection.send.assert_called_once_with(
-            {"uuid": client._uuid, "action": "subscribe"}
+            {"UUID": client._uuid, "ACTION": "subscribe"}
         )
 
     def test_propaga_connection_lost(self, client, connection):
@@ -233,7 +233,7 @@ class TestRun:
         client.run()
 
         assert scripted.connect.call_count == 1
-        assert scripted.sent == [{"uuid": client._uuid, "action": "subscribe"}]
+        assert scripted.sent == [{"UUID": client._uuid, "ACTION": "subscribe"}]
         assert writer.write.call_args_list == [call({"n": 1})]
         assert client._stop_event.is_set()
 
@@ -251,8 +251,8 @@ class TestRun:
 
         assert scripted.connect.call_count == 2
         assert scripted.sent == [
-            {"uuid": client._uuid, "action": "subscribe"},
-            {"uuid": client._uuid, "action": "subscribe"},
+            {"UUID": client._uuid, "ACTION": "subscribe"},
+            {"UUID": client._uuid, "ACTION": "subscribe"},
         ]
         assert writer.write.call_args_list == [call({"n": 1})]
 

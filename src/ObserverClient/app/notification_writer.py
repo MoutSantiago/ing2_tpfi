@@ -12,18 +12,19 @@ Copyright (c) 2026. Licencia MIT (ver LICENSE).
 """
 
 import json
+import logging
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 
 class NotificationWriter:
-    """
-    Escribe notificaciones JSON por pantalla y, opcionalmente, en un archivo.
+    """Escribe notificaciones por pantalla y, opcionalmente, en un archivo."""
 
-    Attributes:
-        _output_path (Optional[str]): Ruta del archivo donde se
-            guardan las notificaciones. Vale None si no se
-            especificó un archivo de salida.
-    """
+    _output_path: Optional[str]
+    """Atributo privado de instancia con la ruta del archivo donde se
+    guardan las notificaciones. Vale None si no se especificó un archivo
+    de salida."""
 
     def __init__(self, output_path: Optional[str]) -> None:
         """
@@ -51,6 +52,9 @@ class NotificationWriter:
             # Si ocurre un error, el OSError se propaga al invocador.
             with open(self._output_path, "a", encoding="utf-8"):
                 pass
+            logger.info(
+                "Las notificaciones se guardarán en %s", self._output_path
+            )
 
     def write(self, message: dict) -> None:
         """
@@ -79,6 +83,7 @@ class NotificationWriter:
         # flush=True fuerza el vaciado del buffer para que el
         # mensaje sea visible inmediatamente.
         print(json_line, flush=True)
+        logger.debug("Notificación: %s", json_line)
 
         # Si no se configuró un archivo, no hacemos nada más.
         if self._output_path is None:

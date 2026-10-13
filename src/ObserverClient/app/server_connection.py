@@ -12,6 +12,7 @@ Copyright (c) 2026. Licencia MIT (ver LICENSE).
 """
 
 import json
+import logging
 from socket import (
     SHUT_RDWR,
     SO_KEEPALIVE,
@@ -25,6 +26,8 @@ from ObserverClient.app.exceptions import ConnectionLostError
 
 CONNECT_TIMEOUT = 5
 MAX_LINE = 1024 * 1024
+
+logger = logging.getLogger(__name__)
 
 
 class ServerConnection:
@@ -96,9 +99,17 @@ class ServerConnection:
         except OSError as error:
             self._sock = None
             self._reader = None
+            logger.debug(
+                "No se pudo conectar a %s:%d: %s",
+                self._host,
+                self._port,
+                error,
+            )
             raise ConnectionLostError(
                 f"No se pudo conectar al servidor {self._host}:{self._port}"
             ) from error
+
+        logger.debug("Conexión establecida con %s:%d", self._host, self._port)
 
     def send(self, message: dict) -> None:
         r"""Serializa el message a JSON de una línea (con ensure_ascii=False).
@@ -117,7 +128,9 @@ class ServerConnection:
         try:
             self._sock.sendall(data)
         except OSError as error:
+            logger.warning("Falló el envío del mensaje: %s", error)
             raise ConnectionLostError("Falló el envío del mensaje") from error
+        logger.debug("Mensaje enviado: %s", message)
 
     def receive(self) -> dict:
         r"""Bloquea hasta recibir una línea completa y la retorna como dict.
@@ -152,6 +165,7 @@ class ServerConnection:
         message = json.loads(line)
         if not isinstance(message, dict):
             raise ValueError("El mensaje recibido no es un objeto JSON")
+        logger.debug("Mensaje recibido del servidor")
         return message
 
     def close(self) -> None:
@@ -179,3 +193,4 @@ class ServerConnection:
         except OSError:
             pass
         self._sock = None
+        logger.debug("Conexión con %s:%d cerrada", self._host, self._port)
