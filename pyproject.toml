@@ -7,6 +7,10 @@ env = [
     "FORCE_COLOR=0"
 ]
 
+[tool.mypy]
+mypy_path = "src"
+explicit_package_bases = true
+
 [tool.pyright]
 include = ["src", "tests", "scripts"]
 extraPaths = ["src"]
