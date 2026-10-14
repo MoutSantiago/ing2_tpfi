@@ -3,7 +3,7 @@
 El servidor de aplicaciones se inicia con:
 
 ```sh
-python src/singletonproxyobserver.py {-p=port} {-v}
+python src/SingletonProxyObserverTPFI/singletonproxyobserver.py {-p=port} {-v}
 ```
 
 Si no se informa el puerto, se toma `*:8080`.
@@ -13,7 +13,7 @@ Si no se informa el puerto, se toma `*:8080`.
 Consultar o actualizar un registro de `CorporateData`:
 
 ```sh
-python src/singletonclient.py -i=input.json {-o=output.json} {-v}
+python src/SingletonClient/singletonclient.py -i=input.json {-o=output.json} {-v}
 ```
 
 Formato del `input.json`:
@@ -36,7 +36,31 @@ Acciones soportadas: `get`, `set` y `list`.
 Suscribirse para recibir notificaciones de cambios:
 
 ```sh
-python src/observerclient.py {-s=hostname} {-p=port} {-o=output.json} {-v}
+python src/ObserverClient/observerclient.py {-s=hostname} {-p=port} {-o=output.json} {-r=seconds} {-v}
 ```
 
-Si no se informan host y puerto, se toman `localhost` y `8080`. El cliente mantiene el puerto abierto y reintenta la conexión cada 30 segundos (parametrizable) si el socket se interrumpe.
+Si no se informan host y puerto, se toman `localhost` y `8080`. El cliente mantiene la conexión
+abierta y reintenta cada 30 segundos (parametrizable con `-r`) si el socket se interrumpe.
+
+Cuando el servidor registra la suscripción, responde con un mensaje de confirmación
+(`{"UUID": "<uuid>", "ACTION": "ok"}`). El cliente lo muestra únicamente por la terminal y no lo
+guarda en el archivo de salida.
+
+### Formato de las notificaciones
+
+Cada notificación se muestra por pantalla como un JSON multilínea. Si se configura `-o`, las
+notificaciones se guardan dentro de un array JSON en ese archivo:
+
+```json
+[
+    {
+        "UUID": "123",
+        "ACTION": "change",
+        "ID": "1",
+        "CUIT": "30-12345678-9"
+    }
+]
+```
+
+Si el archivo apuntado por `-o` tiene el formato antiguo (una notificación JSON por línea), el
+cliente lo migra automáticamente al array.

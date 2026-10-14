@@ -22,6 +22,16 @@ Copyright (c) 2026. Licencia MIT (ver LICENSE).
 from __future__ import annotations
 
 
+class InvalidRequestError(Exception):
+    """Excepción que indica que una petición entrante es inválida.
+
+    La lanza Server._validate cuando la petición recibida no cumple la
+    estructura mínima del protocolo: no es un objeto JSON, o le falta UUID,
+    ACTION, ID o al menos un campo de CorporateData según la acción. La
+    captura Server._handle_client para responder con un error al cliente.
+    """
+
+
 class DataAccessError(Exception):
     """Excepción base de los errores de acceso a la base de datos.
 

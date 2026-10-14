@@ -34,11 +34,12 @@ from ObserverClient.app.observer_client import (  # noqa: E402
 from ObserverClient.app.server_connection import (  # noqa: E402
     ServerConnection,
 )
-from SingletonProxyObserverTPFI.singletonproxyobserver import (  # noqa: E402
-    ColorFormatter,
-)
+from shared.logger import configure_logging as _configure_logging  # noqa: E402
 
-logger = logging.getLogger("ObserverClient")
+LOGGER_NAME = "ObserverClient"
+"""Nombre del logger del paquete propio, configurado por shared.logger."""
+
+logger = logging.getLogger(LOGGER_NAME)
 
 
 def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
@@ -105,25 +106,11 @@ def configure_logging(verbose: bool) -> None:
 
     Con verbose en True usa el nivel DEBUG para el código propio;
     en caso contrario, WARNING. Las librerías externas siempre en WARNING.
+
+    Args:
+        verbose: Si se debe activar el nivel DEBUG del paquete propio.
     """
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setFormatter(ColorFormatter(sys.stdout.isatty()))
-
-    # El logger raíz queda en WARNING, para que los logs de los paquetes no
-    # propios no se muestren por defecto
-    root_logger = logging.getLogger()
-    root_logger.handlers.clear()
-    root_logger.addHandler(handler)
-    root_logger.setLevel(logging.WARNING)
-
-    # El paquete propio puede emitir DEBUG en modo verbose
-    logging.getLogger("ObserverClient").setLevel(
-        logging.DEBUG if verbose else logging.WARNING
-    )
-
-    # Las librerías externas siempre en WARNING para no ensuciar la salida
-    for lib in ("boto3", "botocore", "urllib3"):
-        logging.getLogger(lib).setLevel(logging.WARNING)
+    _configure_logging(verbose, LOGGER_NAME)
 
 
 def build_client(

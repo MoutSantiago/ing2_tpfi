@@ -13,17 +13,18 @@ Autores:
 Copyright (c) 2026. Licencia MIT (ver LICENSE).
 """
 
+import argparse
 import logging
 import sys
 from pathlib import Path
+from typing import Optional, Sequence
 
 # Agrega el directorio padre (src/) al path ANTES de los imports absolutos,
 # para que funcionen tanto al ejecutar el archivo directamente
 # (python3 singletonproxyobserver.py) como como módulo (-m).
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import typer  # noqa: E402
-
+from shared.logger import configure_logging  # noqa: E402
 from SingletonProxyObserverTPFI.app.exceptions import (  # noqa: E402
     DataAccessError,
 )
@@ -41,58 +42,41 @@ from SingletonProxyObserverTPFI.app.singleton.corporate_log_dao import (  # noqa
     CorporateLogDAO,
 )
 
-app = typer.Typer()
+LOGGER_NAME = "SingletonProxyObserverTPFI"
+"""Nombre del logger del paquete propio, configurado por shared.logger."""
+
+DEFAULT_PORT = 8080
+"""Puerto por defecto donde escucha el servidor."""
 
 
-RESET = "\033[0m"
-COLORS = {
-    logging.DEBUG: "\033[32m",  # verde
-    logging.INFO: "\033[32m",  # verde
-    logging.WARNING: "\033[33m",  # amarillo
-    logging.ERROR: "\033[31m",  # rojo
-    logging.CRITICAL: "\033[31m",  # rojo
-}
+def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
+    """Procesa los argumentos de la línea de comandos.
 
+    Args:
+        argv: Lista de argumentos a parsear. Si es None, usa sys.argv[1:].
 
-class ColorFormatter(logging.Formatter):
-    """Formatea cada línea pintando solo la hora y el nivel."""
-
-    def __init__(self, use_color: bool) -> None:
-        """Guarda si se deben emitir códigos de color."""
-        super().__init__(datefmt="%H:%M:%S")
-        self._use_color = use_color
-
-    def format(self, record: logging.LogRecord) -> str:
-        """Devuelve la línea de log con el encabezado coloreado."""
-        head = f"{self.formatTime(record, self.datefmt)} "
-        head += f"{record.levelname:<7}"
-        if self._use_color:
-            head = f"{COLORS.get(record.levelno, '')}{head}{RESET}"
-        line = f"{head} {record.name}: {record.getMessage()}"
-        if record.exc_info:
-            line += "\n" + self.formatException(record.exc_info)
-        return line
-
-
-def configure_logging(verbose: bool) -> None:
-    """Configura el logging del servidor según el modo verbose.
-
-    Con verbose en True usa el nivel DEBUG para el código propio;
-    en caso contrario, WARNING. Las librerías externas siempre en WARNING.
+    Returns:
+        Los argumentos ya validados por argparse.
     """
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setFormatter(ColorFormatter(sys.stdout.isatty()))
-
-    # El logger raíz maneja todo el código propio
-    logging.basicConfig(
-        level=logging.DEBUG if verbose else logging.WARNING,
-        handlers=[handler],
-        force=True,
+    parser = argparse.ArgumentParser(
+        description="Servidor de aplicaciones del TPFI.",
+    )
+    parser.add_argument(
+        "--port",
+        "-p",
+        type=int,
+        default=DEFAULT_PORT,
+        metavar="port",
+        help="Puerto del servidor (por defecto: %(default)s).",
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Activar modo de logs detallados.",
     )
 
-    # Las librerías externas siempre en WARNING para no ensuciar la salida
-    for lib in ("boto3", "botocore", "urllib3", "asyncio"):
-        logging.getLogger(lib).setLevel(logging.WARNING)
+    return parser.parse_args(argv)
 
 
 def build_server() -> Server:
@@ -133,13 +117,7 @@ def build_server() -> Server:
     return server
 
 
-@app.command()
-def main(
-    port: int = typer.Option(8080, "--port", "-p", help="Puerto del servidor"),
-    verbose: bool = typer.Option(
-        False, "-v", help="Activar modo de logs detallados"
-    ),
-) -> None:
+def main(argv: Optional[Sequence[str]] = None) -> int:
     """Orquesta el arranque del servidor.
 
     Es el único lugar donde se capturan los errores fatales de arranque,
@@ -152,9 +130,17 @@ def main(
     Códigos de salida:
         0: Terminación normal (cancelación manual con Ctrl+C).
         1: Error de ejecución (puerto ocupado o no se pudo acceder a DynamoDB).
-        2: Argumentos malformados (lo devuelve typer por defecto).
+        2: Argumentos malformados (lo devuelve argparse por defecto).
+
+    Args:
+        argv: Lista de argumentos a parsear. Si es None, usa sys.argv[1:].
+
+    Returns:
+        El código de salida del proceso.
     """
-    configure_logging(verbose)
+    args = parse_args(argv)
+
+    configure_logging(args.verbose, LOGGER_NAME)
 
     logger = logging.getLogger(__name__)
 
@@ -163,25 +149,29 @@ def main(
     try:
         logger.debug("Construyendo servidor...")
         server = build_server()
-        server._port = port
+        server._port = args.port
 
-        logger.info("Iniciando servidor en el puerto %d...", port)
+        logger.info("Iniciando servidor en el puerto %d...", args.port)
         server.serve_forever()
 
     except DataAccessError as exc:
         logger.error("No se pudo acceder a DynamoDB: %s", exc)
-        raise typer.Exit(code=1) from exc
+        return 1
 
     except OSError as exc:
-        logger.error("Error de socket (¿puerto %d ocupado?): %s", port, exc)
-        raise typer.Exit(code=1) from exc
+        logger.error(
+            "Error de socket (¿puerto %d ocupado?): %s", args.port, exc
+        )
+        return 1
 
     except KeyboardInterrupt:
         logger.info("Deteniendo servidor...")
         if server is not None:
             server.stop()
-        raise typer.Exit(code=0) from None
+        return 0
+
+    return 0
 
 
 if __name__ == "__main__":
-    app()
+    sys.exit(main(sys.argv[1:]))

@@ -59,10 +59,17 @@ Todas las ramas deben crearse respetando este modelo para mantener consistencia 
 source .venv/bin/activate
 ```
 
+## Logging
+
+El servidor y los clientes comparten la configuración de logging de `src/shared/logger.py`
+(`ColorFormatter` y `configure_logging`). Cada punto de entrada llama a `configure_logging(verbose,
+<paquete>)`, de modo que la flag `-v/--verbose` activa el nivel `DEBUG` del paquete propio y las
+librerías externas quedan siempre en `WARNING`.
+
 ## Ejecutar el servidor
 
-El punto de entrada es `singletonproxyobserver.py`, que expone un comando de Typer con las flags
-`--port/-p` y `--verbose/-v`.
+El punto de entrada es `singletonproxyobserver.py`, que parsea sus argumentos con `argparse` y acepta
+las flags `--port/-p` y `-v/--verbose`.
 
 ### Desde el directorio del paquete
 
@@ -93,7 +100,7 @@ python3 singletonproxyobserver.py --help
 | ------ | ------------------------------------------------------------------------------------ |
 | `0`    | Terminación normal. Ocurre al cancelar con `Ctrl+C`, que dispara el apagado ordenado |
 | `1`    | Error de ejecución: puerto ya ocupado o no se pudo acceder a DynamoDB                |
-| `2`    | Argumentos malformados (lo devuelve Typer por defecto)                               |
+| `2`    | Argumentos malformados (lo devuelve argparse por defecto)                            |
 
 Los errores fatales de arranque se informan con un mensaje claro, nunca con un traceback.
 
