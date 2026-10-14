@@ -69,19 +69,10 @@ jobs:
 
   docs:
     # Corre en PRs hacia main y en cada push/merge a main (post-merge)
+    # Este job solo construye y guarda el artifact; nunca despliega
     if: github.base_ref == 'main' || github.ref == 'refs/heads/main'
     needs: [lint, security, tests] # solo si los tres anteriores pasaron
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    concurrency:
-      group: docs-pages
-      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -95,11 +86,27 @@ jobs:
         with:
           name: docs
           path: docs/_build/html
-      # Despliegue real a GitHub Pages (post-merge a main)
+      # Empaqueta para Pages (lo usa docs-deploy, solo en main)
       - uses: actions/upload-pages-artifact@v3
         if: github.ref == 'refs/heads/main'
         with:
           path: docs/_build/html
+
+  docs-deploy:
+    # Despliegue real a GitHub Pages; solo post-merge a main, nunca en PRs
+    if: github.ref == 'refs/heads/main'
+    needs: [docs]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      group: docs-pages
+      cancel-in-progress: false
+    steps:
       - uses: actions/deploy-pages@v4
-        if: github.ref == 'refs/heads/main'
         id: deployment
