@@ -219,3 +219,5 @@ __marimo__/
 
 # Keys
 *credentials.json
+
+.DS_Store
