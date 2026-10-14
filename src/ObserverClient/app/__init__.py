@@ -1,0 +1,1 @@
+"""Aplicacón del cliente observer."""

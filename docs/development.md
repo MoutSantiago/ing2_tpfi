@@ -89,11 +89,11 @@ python3 singletonproxyobserver.py --help
 
 ### Códigos de salida
 
-| Código | Significado                                                                     |
-| ------ | ------------------------------------------------------------------------------- |
+| Código | Significado                                                                          |
+| ------ | ------------------------------------------------------------------------------------ |
 | `0`    | Terminación normal. Ocurre al cancelar con `Ctrl+C`, que dispara el apagado ordenado |
-| `1`    | Error de ejecución: puerto ya ocupado o no se pudo acceder a DynamoDB           |
-| `2`    | Argumentos malformados (lo devuelve Typer por defecto)                          |
+| `1`    | Error de ejecución: puerto ya ocupado o no se pudo acceder a DynamoDB                |
+| `2`    | Argumentos malformados (lo devuelve Typer por defecto)                               |
 
 Los errores fatales de arranque se informan con un mensaje claro, nunca con un traceback.
 
@@ -176,6 +176,130 @@ línea conforme llega:
 python3 -c "import socket; s=socket.create_connection(('localhost',8080),5); s.sendall(b'{\"UUID\":\"cliente-2\",\"ACTION\":\"subscribe\"}\n'); f=s.makefile('rb'); [print(l.decode().strip()) for l in f]"
 ```
 
+### Sin `nc` para windows
+
+Si no tenés `netcat`, podés mandar las peticiones con Python:
+
+`list`
+
+```sh
+$c = [Net.Sockets.TcpClient]::new('localhost',8080); $s = $c.GetStream(); $w = [IO.StreamWriter]::new($s); $r = [IO.StreamReader]::new($s); $w.WriteLine('{"UUID":"cliente-1","ACTION":"list"}'); $w.Flush(); $r.ReadLine(); $c.Close()
+```
+
+`get`
+
+```sh
+$c=[Net.Sockets.TcpClient]::new('localhost',8080);$s=$c.GetStream();$w=[IO.StreamWriter]::new($s);$r=[IO.StreamReader]::new($s);$w.WriteLine('{"UUID":"cliente-1","ACTION":"get","ID":"1"}');$w.Flush();$r.ReadLine();$c.Close()
+```
+
+`set`
+
+```sh
+$c=[Net.Sockets.TcpClient]::new('localhost',8080);$s=$c.GetStream();$w=[IO.StreamWriter]::new($s);$r=[IO.StreamReader]::new($s);$w.WriteLine('{"UUID":"cliente-1","ACTION":"set","ID":"1","CUIT":"30-12345678-9","sede":"Central"}');$w.Flush();$r.ReadLine();$c.Close()
+```
+
+`suscribe`
+
+```sh
+$c=[Net.Sockets.TcpClient]::new('localhost',8080);$s=$c.GetStream();$w=[IO.StreamWriter]::new($s);$r=[IO.StreamReader]::new($s);$w.WriteLine('{"UUID":"cliente-2","ACTION":"subscribe"}');$w.Flush();while(($l=$r.ReadLine()) -ne $null){$l}
+```
+
+## Ejecutar el cliente ObserverClient
+
+El punto de entrada es `src/ObserverClient/observerclient.py`, basado en `argparse` con las flags
+`-s` (host), `-p` (puerto), `-o` (archivo de salida) y `-v` (verbose). El cliente se suscribe al
+servidor y persiste cada notificación (`ACTION:"change"`) en el archivo indicado por `-o`.
+
+### Desde el directorio del paquete
+
+```sh
+cd src/ObserverClient
+python3 observerclient.py                              # localhost:8080, sin archivo de salida
+python3 observerclient.py -o notificaciones.json       # guarda las notificaciones en un JSON
+python3 observerclient.py -s localhost -p 5000 -v      # indicando host, puerto y modo verbose
+```
+
+### Como módulo
+
+```sh
+cd src
+python3 -m ObserverClient.observerclient -p 5000 -o notificaciones.json -v
+```
+
+Ver la ayuda de las flags:
+
+```sh
+python3 observerclient.py --help
+```
+
+### Códigos de salida
+
+| Código | Significado                                                                 |
+| ------ | --------------------------------------------------------------------------- |
+| `0`    | Terminación normal al cancelar con `Ctrl+C` (el cliente se detiene ordenado) |
+| `1`    | Error de ejecución o de entrada/salida durante el arranque                  |
+| `2`    | Argumentos malformados (lo devuelve `argparse` por defecto)                 |
+
+El cliente reintenta la conexión al servidor de forma periódica, por lo que puede arrancar antes
+que el servidor y engancharse cuando éste esté disponible.
+
+### Requisitos para arrancar
+
+- Verificá que el servidor esté corriendo (ver [Ejecutar el servidor](#ejecutar-el-servidor)).
+- Si usás `-o`, el directorio del archivo debe existir; el cliente solo crea el archivo,
+  no los directorios intermedios.
+- En Windows, evitá nombres de archivo reservados (`con`, `nul`, `aux`, `prn`, ...); ante un nombre
+  inválido, el cliente lo informa con un error claro.
+
+## Probar el cliente a mano (Unix)
+
+Con el cliente corriendo en una terminal (`python3 observerclient.py -o notificaciones.json`)
+y el servidor en otra, hacé un `set` desde una tercera terminal:
+
+```sh
+echo '{"UUID":"cliente-1","ACTION":"set","ID":"1","CUIT":"30-12345678-9","sede":"Central"}' | nc localhost 8080
+```
+
+La notificación debe llegar al cliente y agregarse a `notificaciones.json` como un JSON por línea.
+Verificalo con:
+
+```sh
+cat notificaciones.json
+```
+
+`Ctrl+C` en la terminal del cliente lo detiene de forma ordenada con código de salida `0`.
+
+### Sin `nc`
+
+Si no tenés `netcat`, dispara un `set` con Python:
+
+```sh
+python3 -c "import socket; s=socket.create_connection(('localhost',8080),5); s.sendall(b'{\"UUID\":\"cliente-1\",\"ACTION\":\"set\",\"ID\":\"1\",\"CUIT\":\"30-12345678-9\",\"sede\":\"Central\"}\n'); print(s.recv(65536).decode())"
+```
+
+## Probar el cliente a mano (Windows)
+
+### Ejecutar el cliente
+
+```powershell
+cd src\ObserverClient
+python observerclient.py -o notificaciones.json -v
+```
+
+### Disparar notificaciones desde otra terminal (PowerShell)
+
+Con el cliente y el servidor corriendo, ejecutá un `set`:
+
+```powershell
+$c=[Net.Sockets.TcpClient]::new('localhost',8080);$s=$c.GetStream();$w=[IO.StreamWriter]::new($s);$r=[IO.StreamReader]::new($s);$w.WriteLine('{"UUID":"cliente-1","ACTION":"set","ID":"1","CUIT":"30-12345678-9","sede":"Central"}');$w.Flush();$r.ReadLine();$c.Close()
+```
+
+La notificación debe aparecer en la terminal del cliente y guardarse en `notificaciones.json`:
+
+```powershell
+Get-Content notificaciones.json
+```
+
 ## Tests
 
 ```sh
@@ -249,6 +373,13 @@ python -m mypy src && \
 pyright && \
 bandit -r src && \
 pytest --cov=src --cov-fail-under=85
+```
+
+## Ejecución completa con windows (replica de la CI)
+
+```sh
+$cmds = { ruff check . }, { black --check . }, { pycodestyle src }, { pydocstyle src }, { python -m mypy src }, { pyright }, { bandit -r src }, { pytest --cov=src --cov-fail-under=85 }
+foreach ($c in $cmds) { & $c; if ($LASTEXITCODE -ne 0) { break } }
 ```
 
 ## Agregar una dependencia
