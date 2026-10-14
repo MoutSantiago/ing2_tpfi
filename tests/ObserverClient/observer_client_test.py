@@ -169,6 +169,24 @@ class TestListen:
             call({"n": 2}),
         ]
 
+    def test_muestra_el_ok_solamente_por_terminal(
+        self, client, connection, writer
+    ):
+        ok = {"UUID": "u", "ACTION": "ok"}
+        connection.receive.side_effect = [
+            ok,
+            {"n": 1},
+            ConnectionLostError("corte"),
+        ]
+        with pytest.raises(ConnectionLostError):
+            client._listen()
+        assert writer.show.call_args_list == [call(ok)]
+        assert writer.write.call_args_list == [call({"n": 1})]
+
+    def test_is_subscription_ok(self, client):
+        assert client._is_subscription_ok({"UUID": "u", "ACTION": "ok"})
+        assert not client._is_subscription_ok({"n": 1})
+
     def test_continua_tras_un_mensaje_invalido(
         self, client, connection, writer, caplog
     ):

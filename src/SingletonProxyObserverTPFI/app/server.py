@@ -21,6 +21,7 @@ from typing import Any, Protocol
 
 from SingletonProxyObserverTPFI.app.exceptions import (
     DataAccessError,
+    InvalidRequestError,
     ObserverUnavailableError,
     RecordNotFoundError,
 )
@@ -308,13 +309,8 @@ class Server:
             logger.debug("Petición recibida: %s", request)
 
             # Verificamos que la petición tenga la estructura mínima.
-            if not self._validate(request):
-                logger.warning("Petición inválida: %s", request)
-                self._send_error(
-                    conn,
-                    "Petición inválida.",
-                )
-                return
+            # _validate lanza InvalidRequestError si no la cumple.
+            self._validate(request)
 
             # Ejecutamos la operación correspondiente.
             response = self._dispatch(request, conn)
@@ -332,6 +328,11 @@ class Server:
             # El cliente envió algo que no es JSON válido.
             logger.warning("JSON inválido recibido")
             self._send_error(conn, "JSON inválido.")
+
+        except InvalidRequestError as exc:
+            # La petición es JSON válido pero no cumple el protocolo.
+            logger.warning("Petición inválida: %s", exc)
+            self._send_error(conn, "Petición inválida.")
 
         except (DataAccessError, RecordNotFoundError) as exc:
             # Errores provenientes del Proxy o de los DAOs.
@@ -422,7 +423,7 @@ class Server:
 
         return line.decode("utf-8")
 
-    def _validate(self, request: Any) -> bool:
+    def _validate(self, request: Any) -> None:
         """
         Valida los campos mínimos de una petición.
 
@@ -438,39 +439,41 @@ class Server:
         Args:
             request: objeto obtenido luego de decodificar el JSON.
 
-        Returns:
-            True si la petición cumple las condiciones mínimas.
-            False en caso contrario.
+        Raises:
+            InvalidRequestError: si la petición no cumple las condiciones
+                mínimas.
         """
         # json.loads() puede devolver un string, una lista, un número,
         # etc. Solamente aceptamos objetos JSON.
         if not isinstance(request, dict):
-            return False
+            raise InvalidRequestError("La petición debe ser un objeto JSON.")
 
         # UUID es obligatorio.
         uuid = request.get("UUID")
 
         if not isinstance(uuid, str) or not uuid.strip():
-            return False
+            raise InvalidRequestError("UUID es obligatorio.")
 
         # ACTION también es obligatorio.
         action = request.get("ACTION")
 
         if not isinstance(action, str):
-            return False
+            raise InvalidRequestError("ACTION es obligatorio.")
 
         # Normalizamos para evitar aceptar "GET", " Get ", etc.
         action = action.strip().lower()
 
         if action not in self.VALID_ACTIONS:
-            return False
+            raise InvalidRequestError(f"Acción inválida: {action!r}.")
 
         # get y set necesitan identificar el registro.
         if action in {"get", "set"}:
             record_id = request.get("ID")
 
             if not isinstance(record_id, str) or not record_id.strip():
-                return False
+                raise InvalidRequestError(
+                    f"ID es obligatorio para la acción {action}."
+                )
 
         # set debe modificar al menos un campo del tuple.
         if action == "set":
@@ -479,9 +482,9 @@ class Server:
             )
 
             if not has_data_field:
-                return False
-
-        return True
+                raise InvalidRequestError(
+                    "set requiere al menos un campo de CorporateData."
+                )
 
     def _dispatch(
         self,
@@ -551,7 +554,8 @@ class Server:
 
         Primero se realiza la auditoría de la suscripción mediante
         CorporateDataProxy. Solamente si la auditoría tiene éxito
-        se crea y registra el ClientObserver.
+        se crea y registra el ClientObserver. Por último se envía al
+        cliente un mensaje de confirmación.
 
         Args:
             conn: socket del cliente.
@@ -569,6 +573,11 @@ class Server:
         # El Publisher queda encargado de mantener al observer y
         # notificarlo cuando exista una modificación.
         self._publisher.subscribe(observer)
+
+        # Confirmamos al cliente que la suscripción se registró bien.
+        # El mensaje viaja por el mismo socket que queda abierto para las
+        # notificaciones.
+        self._send_json(conn, {"UUID": uuid, "ACTION": "ok"})
 
     @staticmethod
     def _send_json(

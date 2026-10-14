@@ -7,6 +7,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
+from SingletonProxyObserverTPFI.app.exceptions import InvalidRequestError
 from SingletonProxyObserverTPFI.app.server import Server
 
 
@@ -108,7 +109,7 @@ def test_validate_get_correcto(server):
         "ACTION": "get",
     }
 
-    assert server._validate(request) is True
+    assert server._validate(request) is None
 
 
 def test_validate_list_correcto(server):
@@ -121,7 +122,7 @@ def test_validate_list_correcto(server):
         "ACTION": "list",
     }
 
-    assert server._validate(request) is True
+    assert server._validate(request) is None
 
 
 def test_validate_subscribe_correcto(server):
@@ -134,7 +135,7 @@ def test_validate_subscribe_correcto(server):
         "ACTION": "subscribe",
     }
 
-    assert server._validate(request) is True
+    assert server._validate(request) is None
 
 
 def test_validate_set_correcto(server):
@@ -150,7 +151,7 @@ def test_validate_set_correcto(server):
         "cp": "3260",
     }
 
-    assert server._validate(request) is True
+    assert server._validate(request) is None
 
 
 def test_validate_rechaza_request_no_dict(server):
@@ -158,7 +159,8 @@ def test_validate_rechaza_request_no_dict(server):
     Un array JSON no debe considerarse una petición válida.
     """
 
-    assert server._validate([]) is False
+    with pytest.raises(InvalidRequestError):
+        server._validate([])
 
 
 def test_validate_rechaza_uuid_ausente(server):
@@ -170,7 +172,8 @@ def test_validate_rechaza_uuid_ausente(server):
         "ACTION": "list",
     }
 
-    assert server._validate(request) is False
+    with pytest.raises(InvalidRequestError):
+        server._validate(request)
 
 
 def test_validate_rechaza_uuid_vacio(server):
@@ -183,7 +186,8 @@ def test_validate_rechaza_uuid_vacio(server):
         "ACTION": "list",
     }
 
-    assert server._validate(request) is False
+    with pytest.raises(InvalidRequestError):
+        server._validate(request)
 
 
 @pytest.mark.parametrize(
@@ -206,7 +210,8 @@ def test_validate_rechaza_action_invalida(server, action):
         "ACTION": action,
     }
 
-    assert server._validate(request) is False
+    with pytest.raises(InvalidRequestError):
+        server._validate(request)
 
 
 def test_validate_rechaza_get_sin_id(server):
@@ -219,7 +224,8 @@ def test_validate_rechaza_get_sin_id(server):
         "ACTION": "get",
     }
 
-    assert server._validate(request) is False
+    with pytest.raises(InvalidRequestError):
+        server._validate(request)
 
 
 def test_validate_rechaza_set_sin_id(server):
@@ -233,7 +239,8 @@ def test_validate_rechaza_set_sin_id(server):
         "cp": "3260",
     }
 
-    assert server._validate(request) is False
+    with pytest.raises(InvalidRequestError):
+        server._validate(request)
 
 
 def test_validate_rechaza_set_sin_campos(server):
@@ -247,7 +254,8 @@ def test_validate_rechaza_set_sin_campos(server):
         "ACTION": "set",
     }
 
-    assert server._validate(request) is False
+    with pytest.raises(InvalidRequestError):
+        server._validate(request)
 
 
 def test_validate_acepta_set_con_cualquier_campo_corporate_data(server):
@@ -264,7 +272,7 @@ def test_validate_acepta_set_con_cualquier_campo_corporate_data(server):
             field: "valor",
         }
 
-        assert server._validate(request) is True
+        assert server._validate(request) is None
 
 
 # -------------------------------------------------------------------
@@ -415,7 +423,8 @@ def test_handle_subscribe_audita_antes_de_suscribir(
 
     1. auditoría;
     2. creación del observer;
-    3. registro en Publisher.
+    3. registro en Publisher;
+    4. confirmación al cliente.
     """
 
     conn = Mock()
@@ -443,6 +452,12 @@ def test_handle_subscribe_audita_antes_de_suscribir(
     publisher.subscribe.assert_called_once_with(
         observer,
     )
+
+    # El servidor confirma la suscripción con un mensaje ok por el socket.
+    sent_data = conn.sendall.call_args.args[0]
+    response = json.loads(sent_data.decode("utf-8"))
+
+    assert response == {"UUID": "uuid-123", "ACTION": "ok"}
 
 
 def test_handle_subscribe_no_crea_observer_si_auditoria_falla(
@@ -678,6 +693,13 @@ def test_handle_client_subscribe_no_cierra_socket(
     )
 
     publisher.subscribe.assert_called_once()
+
+    # El servidor confirma la suscripción con un mensaje ok.
+    sent_data = conn.sendall.call_args.args[0]
+    assert json.loads(sent_data.decode("utf-8")) == {
+        "UUID": "uuid-123",
+        "ACTION": "ok",
+    }
 
     # El socket queda abierto porque será utilizado por
     # ClientObserver para enviar futuras notificaciones.
