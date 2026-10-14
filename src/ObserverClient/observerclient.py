@@ -67,6 +67,17 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
         help="Archivo donde agregar las notificaciones recibidas.",
     )
     parser.add_argument(
+        "-r",
+        type=int,
+        default=DEFAULT_RETRY_INTERVAL,
+        metavar="seconds",
+        dest="retry_interval",
+        help=(
+            "Segundos de espera entre reintentos de conexión "
+            "(por defecto: %(default)s)."
+        ),
+    )
+    parser.add_argument(
         "-v",
         action="store_true",
         dest="verbose",
@@ -77,6 +88,9 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
 
     if not 1 <= args.p <= 65535:
         parser.error("el puerto debe ser un entero entre 1 y 65535")
+
+    if args.retry_interval <= 0:
+        parser.error("el intervalo de reintento debe ser mayor que cero")
 
     # Nombres descriptivos para facilitar el uso de los argumentos.
     args.host = args.s
@@ -148,6 +162,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             host=args.host,
             port=args.port,
             output=args.output,
+            retry_interval=args.retry_interval,
         )
 
         logger.info("Iniciando cliente hacia %s:%d...", args.host, args.port)
