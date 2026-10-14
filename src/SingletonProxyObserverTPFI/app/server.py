@@ -252,16 +252,20 @@ class Server:
         """
         Solicita la detención del servidor.
 
-        No cierra los sockets pertenecientes a los clientes que ya
-        realizaron subscribe.
+        Cierra de forma limpia todos los suscriptores registrados en el
+        publisher, de modo que los sockets de los ClientObserver queden
+        liberados al detener el servidor.
         """
         # Indicamos al thread principal que debe abandonar el bucle.
         self._stop_event.set()
 
-        # Cerramos únicamente el socket de escucha.
+        # Cerramos de forma limpia todos los suscriptores.
         #
-        # Los sockets de los ClientObserver pertenecen a las
-        # conexiones de los suscriptores y no deben cerrarse acá.
+        # El Publisher se encarga de cerrar el socket de cada
+        # ClientObserver y de vaciar su lista de suscriptores.
+        self._publisher.close_all()
+
+        # Cerramos el socket de escucha.
         if self._sock is not None:
             try:
                 self._sock.close()

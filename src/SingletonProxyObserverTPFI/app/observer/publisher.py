@@ -64,3 +64,12 @@ class Publisher(ABC):
         a los demás.
         """
         pass
+
+    def close_all(self) -> None:
+        """Método close_all.
+
+        Cierra de forma limpia a todos los suscriptores y los quita de la
+        lista. Se utiliza cuando el servidor se detiene para liberar las
+        conexiones que permanecían abiertas por las suscripciones.
+        """
+        pass
