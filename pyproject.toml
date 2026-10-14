@@ -1,5 +1,6 @@
 [tool.pytest.ini_options]
 pythonpath = ["src"]
+addopts = "--import-mode=importlib"
 env = [
     "NO_COLOR=1",
     "TERM=dumb",
