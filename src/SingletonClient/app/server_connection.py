@@ -7,6 +7,7 @@ La clase traduce los errores de comunicación a ConnectionLostError.
 Ingeniería de Software II - UADER FCyT (2026)
 """
 
+import contextlib
 import json
 import socket
 from typing import Any, Optional, TextIO
@@ -163,13 +164,9 @@ class ServerConnection:
         self._sock = None
 
         if reader is not None:
-            try:
+            with contextlib.suppress(OSError):
                 reader.close()
-            except Exception:
-                pass
 
         if connection is not None:
-            try:
+            with contextlib.suppress(OSError):
                 connection.close()
-            except Exception:
-                pass
