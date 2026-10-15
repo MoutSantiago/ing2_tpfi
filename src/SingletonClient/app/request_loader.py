@@ -15,13 +15,16 @@ Copyright (c) 2026. Licencia MIT (ver LICENSE).
 """
 
 import json
+import logging
 
 from SingletonClient.app.exceptions import InvalidRequestError
 
-VALID_ACTIONS = ("get", "set", "list")
+logger = logging.getLogger(__name__)
+
+VALID_ACTIONS: tuple[str, ...] = ("get", "set", "list")
 """Acciones permitidas en este cliente."""
 
-TUPLE_FIELDS = (
+TUPLE_FIELDS: tuple[str, ...] = (
     "cp",
     "CUIT",
     "domicilio",
@@ -40,16 +43,19 @@ TUPLE_FIELDS = (
 class RequestLoader:
     """RequestLoader es la clase encargada de leer el archivo de entrada."""
 
+    __uuid: str
+    """Identificador de la CPU donde se ejecuta el programa."""
+
     def __init__(self, uuid: str) -> None:
         """Recibe el identificador de la CPU y lo guarda en __uuid."""
-        self.__uuid: str = uuid
-        """Identificador de la CPU donde se ejecuta el programa."""
+        self.__uuid = uuid
 
     def load(self, input_path: str) -> dict:
         """Lee, valida y retorna la petición lista para enviar.
 
         Lanza InvalidRequestError u OSError según el caso.
         """
+        logger.debug("Cargando petición desde %s", input_path)
         data = self._read(input_path)
         self._validate(data)
 
@@ -60,10 +66,12 @@ class RequestLoader:
             for field in TUPLE_FIELDS:
                 if field in data:
                     request[field] = data[field]
+        logger.debug("Petición cargada: %s", request)
         return request
 
     def _read(self, input_path: str) -> dict:
         """Abre el archivo (UTF-8) y lo interpreta como JSON."""
+        logger.debug("Leyendo archivo de entrada: %s", input_path)
         with open(input_path, "r", encoding="utf-8") as file:
             content = file.read()
         try:
@@ -104,6 +112,7 @@ class RequestLoader:
                 and key not in TUPLE_FIELDS
             ]
             if unknown:
+                logger.warning("Campos desconocidos: %s", ", ".join(unknown))
                 raise InvalidRequestError(
                     f"Campos desconocidos: {', '.join(unknown)}."
                 )

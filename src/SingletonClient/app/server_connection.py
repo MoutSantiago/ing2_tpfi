@@ -5,27 +5,50 @@ Cada mensaje se transmite como una línea JSON codificada en UTF-8.
 La clase traduce los errores de comunicación a ConnectionLostError.
 
 Ingeniería de Software II - UADER FCyT (2026)
+Autores:
+ - Laiño Valentino
+ - Mout Santiago
+ - Sandillú Axel
+Copyright (c) 2026. Licencia MIT (ver LICENSE).
 """
 
 import contextlib
 import json
+import logging
 import socket
 from typing import Any, Optional, TextIO
 
 from SingletonClient.app.exceptions import ConnectionLostError
 
+logger = logging.getLogger(__name__)
+
 # Tiempo máximo para establecer la conexión TCP, en segundos.
-CONNECT_TIMEOUT = 5
+CONNECT_TIMEOUT: int = 5
 
 # Tiempo máximo para recibir una respuesta, en segundos.
-DEFAULT_READ_TIMEOUT = 10
+DEFAULT_READ_TIMEOUT: float = 10
 
 # Tamaño máximo permitido para una línea recibida: 16 MiB.
-MAX_LINE = 16 * 1024 * 1024
+MAX_LINE: int = 16 * 1024 * 1024
 
 
 class ServerConnection:
     """Administra una conexión TCP con el servidor."""
+
+    _host: str
+    """Nombre o dirección del servidor."""
+
+    _port: int
+    """Puerto TCP del servidor."""
+
+    _read_timeout: Optional[float]
+    """Tiempo máximo de espera para recibir una respuesta, en segundos."""
+
+    _sock: Optional[socket.socket]
+    """Socket TCP de la conexión; None si no hay conexión abierta."""
+
+    _reader: Optional[TextIO]
+    """Lector de texto del socket; None si no hay conexión abierta."""
 
     def __init__(
         self,
@@ -37,8 +60,8 @@ class ServerConnection:
         self._host = host
         self._port = port
         self._read_timeout = read_timeout
-        self._sock: Optional[socket.socket] = None
-        self._reader: Optional[TextIO] = None
+        self._sock = None
+        self._reader = None
 
     @property
     def is_open(self) -> bool:
@@ -76,9 +99,17 @@ class ServerConnection:
             if connection is not None:
                 connection.close()
 
+            logger.debug(
+                "No se pudo conectar con %s:%d: %s",
+                self._host,
+                self._port,
+                error,
+            )
             raise ConnectionLostError(
                 f"No se pudo conectar con {self._host}:{self._port}."
             ) from error
+
+        logger.debug("Conexión establecida con %s:%d", self._host, self._port)
 
     def send(self, message: dict) -> None:
         """Envía un diccionario como una única línea JSON."""
@@ -95,8 +126,12 @@ class ServerConnection:
 
             # sendall garantiza el envío de todos los bytes o un error.
             connection.sendall(data)
+            logger.debug("Petición enviada: %s", message)
 
         except OSError as error:
+            logger.warning(
+                "Falló el envío de la petición al servidor: %s", error
+            )
             raise ConnectionLostError(
                 "Falló el envío de la petición al servidor."
             ) from error
@@ -148,6 +183,7 @@ class ServerConnection:
             )
 
         try:
+            logger.debug("Respuesta recibida del servidor")
             return json.loads(content)
         except json.JSONDecodeError as error:
             raise ValueError(
@@ -170,3 +206,5 @@ class ServerConnection:
         if connection is not None:
             with contextlib.suppress(OSError):
                 connection.close()
+
+        logger.debug("Conexión con %s:%d cerrada", self._host, self._port)
