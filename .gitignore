@@ -221,3 +221,4 @@ __marimo__/
 *credentials.json
 
 .DS_Store
+output.json
