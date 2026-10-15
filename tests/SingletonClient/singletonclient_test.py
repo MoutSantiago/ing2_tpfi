@@ -83,8 +83,10 @@ def test_configure_logging_without_verbose_uses_warning():
     assert logging.getLogger("SingletonClient").level == logging.WARNING
     assert logging.getLogger().level == logging.WARNING
 
+
 def test_main_success_returns_0(monkeypatch):
     """main retorna 0 cuando el cliente responde correctamente."""
+
     class FakeClient:
         def execute(self, input_path):
             assert input_path == "input.json"
@@ -104,6 +106,7 @@ def test_main_success_returns_0(monkeypatch):
 
 def test_main_server_error_response_returns_1(monkeypatch, capsys):
     """Si la respuesta es "Error", main retorna 1."""
+
     class FakeClient:
         def execute(self, input_path):
             return "Error"
@@ -118,6 +121,7 @@ def test_main_server_error_response_returns_1(monkeypatch, capsys):
 
 def test_main_server_error_dict_returns_1(monkeypatch):
     """Si la respuesta es dict con STATUS Error, main retorna 1."""
+
     class FakeClient:
         def execute(self, input_path):
             return {"STATUS": "Error"}
@@ -165,6 +169,7 @@ def test_main_connection_lost_returns_1(monkeypatch, capsys):
 
 def test_main_value_error_returns_1(monkeypatch, capsys):
     """ValueError (respuesta ilegible) retorna 1."""
+
     def failing_build_client(*args, **kwargs):
         raise ValueError("respuesta no es JSON válido")
 
@@ -179,6 +184,7 @@ def test_main_value_error_returns_1(monkeypatch, capsys):
 
 def test_main_os_error_returns_1(monkeypatch, capsys):
     """OSError retorna 1."""
+
     def failing_build_client(*args, **kwargs):
         raise OSError("archivo no escribible")
 
@@ -193,6 +199,7 @@ def test_main_os_error_returns_1(monkeypatch, capsys):
 
 def test_main_keyboard_interrupt_returns_1(monkeypatch):
     """KeyboardInterrupt retorna 1."""
+
     def failing_build_client(*args, **kwargs):
         raise KeyboardInterrupt
 
@@ -204,6 +211,7 @@ def test_main_keyboard_interrupt_returns_1(monkeypatch):
 
 def test_main_unexpected_exception_returns_1(monkeypatch, capsys):
     """Excepción inesperada retorna 1."""
+
     def failing_build_client(*args, **kwargs):
         raise RuntimeError("fallo inesperado")
 
