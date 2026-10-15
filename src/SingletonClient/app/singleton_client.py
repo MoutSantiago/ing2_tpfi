@@ -16,11 +16,14 @@ Autores:
 Copyright (c) 2026. Licencia MIT (ver LICENSE).
 """
 
+import logging
 from typing import Any
 
 from SingletonClient.app.request_loader import RequestLoader
 from SingletonClient.app.response_writer import ResponseWriter
 from SingletonClient.app.server_connection import ServerConnection
+
+logger = logging.getLogger(__name__)
 
 
 class SingletonClient:
@@ -59,6 +62,7 @@ class SingletonClient:
         self._loader = loader
         self._connection = connection
         self._writer = writer
+        logger.debug("SingletonClient inicializado con sus dependencias")
 
     def execute(self, input_path: str) -> Any:
         """Ejecuta el intercambio completo y retorna la respuesta del servidor.
@@ -81,12 +85,20 @@ class SingletonClient:
             Any: Respuesta del servidor (se retorna incluso si es un error
                 del servidor, por ejemplo "Error").
         """
+        logger.debug("Cargando petición desde %s", input_path)
         request = self._loader.load(input_path)
+
+        logger.debug("Conectando con el servidor")
         self._connection.connect()
         try:
+            logger.debug("Enviando petición al servidor")
             self._connection.send(request)
+            logger.debug("Esperando respuesta del servidor")
             response = self._connection.receive()
         finally:
             self._connection.close()
+            logger.debug("Conexión cerrada")
+
+        logger.debug("Escribiendo respuesta")
         self._writer.write(response)
         return response

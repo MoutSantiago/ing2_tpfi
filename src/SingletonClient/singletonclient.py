@@ -39,10 +39,10 @@ from SingletonClient.app.server_connection import (  # noqa: E402
 )
 from SingletonClient.app.singleton_client import SingletonClient  # noqa: E402
 
-LOGGER_NAME = "SingletonClient"
+LOGGER_NAME: str = "SingletonClient"
 """Nombre del logger del paquete propio, configurado por shared.logger."""
 
-logger = logging.getLogger(LOGGER_NAME)
+logger: logging.Logger = logging.getLogger(LOGGER_NAME)
 
 
 def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:

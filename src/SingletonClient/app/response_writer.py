@@ -17,10 +17,13 @@ Copyright (c) 2026. Licencia MIT (ver LICENSE).
 """
 
 import json
+import logging
 import os
 from typing import Any, Optional
 
-INDENT = 2
+logger = logging.getLogger(__name__)
+
+INDENT: int = 2
 """Cantidad de espacios usados para indentar el JSON de salida."""
 
 
@@ -51,6 +54,7 @@ class ResponseWriter:
 
         if output_path is not None:
             self._check_output_directory(output_path)
+            logger.info("Las respuestas se guardarán en %s", output_path)
 
     @staticmethod
     def _check_output_directory(output_path: str) -> None:
@@ -91,6 +95,7 @@ class ResponseWriter:
         Raises:
             OSError: si falla la escritura del archivo.
         """
+        logger.debug("Escribiendo respuesta: %s", response)
         document = (
             json.dumps(response, ensure_ascii=False, indent=INDENT) + "\n"
         )
