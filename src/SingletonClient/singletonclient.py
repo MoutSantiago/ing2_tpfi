@@ -26,6 +26,7 @@ from typing import Optional, Sequence
 # como como módulo (-m).
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from shared.logger import configure_logging as _configure_logging  # noqa: E402
 from SingletonClient.app.exceptions import (  # noqa: E402
     ConnectionLostError,
     InvalidRequestError,
@@ -37,7 +38,6 @@ from SingletonClient.app.server_connection import (  # noqa: E402
     ServerConnection,
 )
 from SingletonClient.app.singleton_client import SingletonClient  # noqa: E402
-from shared.logger import configure_logging as _configure_logging  # noqa: E402
 
 LOGGER_NAME = "SingletonClient"
 """Nombre del logger del paquete propio, configurado por shared.logger."""
@@ -154,7 +154,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             if response.strip() == "Error":
                 is_error_response = True
         elif isinstance(response, dict):
-            if response.get("STATUS") == "Error" or response.get("status") == "Error":
+            resp = response
+            if resp.get("STATUS") == "Error" or resp.get("status") == "Error":
                 is_error_response = True
 
         if is_error_response:
