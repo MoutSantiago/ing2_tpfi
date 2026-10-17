@@ -1,0 +1,19 @@
+[
+  {
+    "UUID": "cliente-1",
+    "ID": "1",
+    "ACTION": "change",
+    "seqID": "",
+    "web": "",
+    "CUIT": "30-12345678-9",
+    "localidad": "",
+    "provincia": "",
+    "sede": "Central",
+    "idSeq": "",
+    "idreq": "",
+    "telefono": "",
+    "domicilio": "",
+    "id": "1",
+    "cp": ""
+  }
+]

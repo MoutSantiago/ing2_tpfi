@@ -2,6 +2,13 @@
 
 Todos los cambios notables de este proyecto serán documentados en este archivo.
 
+## 0.4.0 - 2026-10-17
+
+## Added
+
+- Finalización del SingletonClient.
+- Inicio del desarrollo del IteratorCorporateData.
+
 ## [0.3.0] - 2026-10-14
 
 ### Added

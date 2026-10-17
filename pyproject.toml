@@ -1,10 +1,15 @@
 [tool.pytest.ini_options]
 pythonpath = ["src"]
+addopts = "--import-mode=importlib"
 env = [
     "NO_COLOR=1",
     "TERM=dumb",
     "FORCE_COLOR=0"
 ]
+
+[tool.mypy]
+mypy_path = "src"
+explicit_package_bases = true
 
 [tool.pyright]
 include = ["src", "tests", "scripts"]
