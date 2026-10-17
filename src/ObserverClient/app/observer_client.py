@@ -221,9 +221,27 @@ class ObserverClient:
 
             logger.debug("Notificación recibida: %s", message)
 
+            # La confirmación de suscripción del servidor solo se muestra
+            # por terminal; no se trata como una notificación.
+            if self._is_subscription_ok(message):
+                self._writer.show(message)
+                continue
+
             # write() puede lanzar OSError (por ejemplo, al escribir el
             # archivo de salida). Esa excepción no se captura: se propaga.
             self._writer.write(message)
+
+    @staticmethod
+    def _is_subscription_ok(message: dict) -> bool:
+        """Indica si el mensaje es la confirmación de suscripción.
+
+        Args:
+            message: Mensaje recibido del servidor.
+
+        Returns:
+            True si el mensaje es el ok de suscripción del servidor.
+        """
+        return message.get("ACTION") == "ok"
 
     def _wait_to_retry(self) -> None:
         """Espera el intervalo antes de reintentar la conexión.

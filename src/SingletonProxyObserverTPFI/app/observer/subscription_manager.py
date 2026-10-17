@@ -105,6 +105,8 @@ class SubscriptionManager(Publisher):
                     _identificador(observer),
                     len(self._observers),
                 )
+            else:
+                logger.warning("El observer no esta subscripto.")
 
     def notify_subscribers(self) -> None:
         """Envía _last_change a todos los suscriptores.
@@ -131,6 +133,30 @@ class SubscriptionManager(Publisher):
                     _identificador(observer),
                     len(self._observers),
                 )
+
+    def close_all(self) -> None:
+        """Cierra todos los suscriptores de forma limpia.
+
+        Invoca el método close de cada observer (los ClientObserver cierran
+        su socket) y vacía la lista de suscriptores, todo bajo _lock.
+        Se utiliza cuando el servidor se detiene.
+        """
+        with self._lock:
+            for observer in self._observers:
+                # close no forma parte del contrato de Observer, por lo
+                # que se consulta con getattr igual que uuid.
+                close = getattr(observer, "close", None)
+
+                if callable(close):
+                    close()
+
+                logger.info(
+                    "Observer %s cerrado por detención del servidor.",
+                    _identificador(observer),
+                )
+
+            self._observers.clear()
+            logger.info("Todos los suscriptores fueron cerrados.")
 
     def publish_change(self, message: dict) -> None:
         """Publica un cambio.
