@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main, develop]
   push:
-    branches: [develop]
+    branches: [develop, main]
 
 jobs:
   lint:
@@ -68,8 +68,9 @@ jobs:
           git push
 
   docs:
-    # Solo al integrar a main (no en develop)
-    if: github.base_ref == 'main'
+    # Corre en PRs hacia main y en cada push/merge a main (post-merge)
+    # Este job solo construye y guarda el artifact; nunca despliega
+    if: github.base_ref == 'main' || github.ref == 'refs/heads/main'
     needs: [lint, security, tests] # solo si los tres anteriores pasaron
     runs-on: ubuntu-latest
     steps:
@@ -80,7 +81,32 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt
       - run: sphinx-build -b html docs docs/_build/html
+      - run: touch docs/_build/html/.nojekyll
       - uses: actions/upload-artifact@v4
         with:
           name: docs
           path: docs/_build/html
+      # Empaqueta para Pages (lo usa docs-deploy, solo en main)
+      - uses: actions/upload-pages-artifact@v3
+        if: github.ref == 'refs/heads/main'
+        with:
+          path: docs/_build/html
+
+  docs-deploy:
+    # Despliegue real a GitHub Pages; solo post-merge a main, nunca en PRs
+    if: github.ref == 'refs/heads/main'
+    needs: [docs]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      group: docs-pages
+      cancel-in-progress: false
+    steps:
+      - uses: actions/deploy-pages@v4
+        id: deployment
