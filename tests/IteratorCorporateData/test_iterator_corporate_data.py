@@ -7,6 +7,7 @@ integración combina una tabla falsa con los componentes reales
 """
 
 import json
+from unittest.mock import Mock
 
 import pytest
 
@@ -82,17 +83,6 @@ class FakeCollection(Collection):
         return self._iterator
 
 
-class FakeWriter:
-    """Escritor de prueba que guarda los resultados recibidos."""
-
-    def __init__(self) -> None:
-        self.results: list[object] = []
-
-    def write(self, result: object) -> None:
-        """Guarda el resultado en lugar de emitirlo."""
-        self.results.append(result)
-
-
 class FakeTable:
     """Tabla falsa que devuelve respuestas predefinidas de scan."""
 
@@ -124,7 +114,7 @@ class TableCollection(Collection):
 def test_constructor_stores_dependencies_and_default_flag():
     """El constructor guarda las dependencias y single_record vale False."""
     collection = FakeCollection(FakeIterator(RECORDS))
-    writer = FakeWriter()
+    writer = Mock(spec=JsonWrite)
 
     client = IteratorCorporateData(collection, writer)
 
@@ -136,35 +126,35 @@ def test_constructor_stores_dependencies_and_default_flag():
 def test_constructor_does_not_query_the_database():
     """El constructor no crea el iterador ni escribe el resultado."""
     collection = FakeCollection(FakeIterator(RECORDS))
-    writer = FakeWriter()
+    writer = Mock(spec=JsonWrite)
 
     IteratorCorporateData(collection, writer)
 
     assert collection.create_iterator_calls == 0
-    assert writer.results == []
+    writer.write.assert_not_called()
 
 
 def test_run_writes_all_records_as_list_in_order():
     """Con varios registros, el escritor recibe la lista ordenada."""
     collection = FakeCollection(FakeIterator(RECORDS))
-    writer = FakeWriter()
+    writer = Mock(spec=JsonWrite)
 
     result = IteratorCorporateData(collection, writer).run()
 
-    assert writer.results == [RECORDS]
+    writer.write.assert_called_once_with(RECORDS)
     assert result == RECORDS
 
 
 def test_run_with_single_record_writes_the_object_not_a_list():
     """Con single_record=True, el escritor recibe el primer registro."""
     collection = FakeCollection(FakeIterator(RECORDS))
-    writer = FakeWriter()
+    writer = Mock(spec=JsonWrite)
 
     result = IteratorCorporateData(
         collection, writer, single_record=True
     ).run()
 
-    assert writer.results == [RECORDS[0]]
+    writer.write.assert_called_once_with(RECORDS[0])
     assert result == RECORDS[0]
     assert not isinstance(result, list)
 
@@ -172,59 +162,55 @@ def test_run_with_single_record_writes_the_object_not_a_list():
 def test_run_with_empty_collection_writes_id_none():
     """Con una colección vacía, el escritor recibe {"id": None}."""
     collection = FakeCollection(FakeIterator([]))
-    writer = FakeWriter()
+    writer = Mock(spec=JsonWrite)
 
     result = IteratorCorporateData(collection, writer).run()
 
-    assert writer.results == [{"id": None}]
+    writer.write.assert_called_once_with({"id": None})
     assert result == {"id": None}
 
 
 def test_run_returns_the_same_result_written():
     """run retorna exactamente lo mismo que recibió el escritor."""
     collection = FakeCollection(FakeIterator(RECORDS))
-    writer = FakeWriter()
+    writer = Mock(spec=JsonWrite)
 
     result = IteratorCorporateData(collection, writer).run()
 
-    assert result is writer.results[0]
+    assert result is writer.write.call_args.args[0]
 
 
 def test_run_propagates_data_access_error_from_has_more():
     """Un DataAccessError de has_more se propaga y no se escribe nada."""
     error = DataAccessError("No se pudo acceder a la base de datos.")
     collection = FakeCollection(FailingIterator(error, fail_on="has_more"))
-    writer = FakeWriter()
+    writer = Mock(spec=JsonWrite)
 
     with pytest.raises(DataAccessError) as exc_info:
         IteratorCorporateData(collection, writer).run()
 
     assert exc_info.value is error
-    assert writer.results == []
+    writer.write.assert_not_called()
 
 
 def test_run_propagates_record_not_found_error_from_next():
     """Un RecordNotFoundError de next se propaga y no se escribe nada."""
     error = RecordNotFoundError("No existe el registro solicitado.")
     collection = FakeCollection(FailingIterator(error, fail_on="next"))
-    writer = FakeWriter()
+    writer = Mock(spec=JsonWrite)
 
     with pytest.raises(RecordNotFoundError) as exc_info:
         IteratorCorporateData(collection, writer).run()
 
     assert exc_info.value is error
-    assert writer.results == []
+    writer.write.assert_not_called()
 
 
 def test_run_propagates_oserror_from_writer():
     """Un OSError del escritor se propaga y no se captura."""
     collection = FakeCollection(FakeIterator(RECORDS))
-    writer = FakeWriter()
-
-    def failing_write(result: object) -> None:
-        raise OSError("No se pudo escribir la salida.")
-
-    writer.write = failing_write
+    writer = Mock(spec=JsonWrite)
+    writer.write.side_effect = OSError("No se pudo escribir la salida.")
 
     with pytest.raises(OSError, match="No se pudo escribir la salida."):
         IteratorCorporateData(collection, writer).run()
