@@ -164,7 +164,7 @@ def test_has_more_is_idempotent():
 
 
 def test_scan_error_is_wrapped_and_chained():
-    """Un error de boto3 se convierte en DataAccessError conservando la causa."""
+    """Un error de boto3 pasa a DataAccessError conservando la causa."""
     original_error = ClientError(
         {
             "Error": {
