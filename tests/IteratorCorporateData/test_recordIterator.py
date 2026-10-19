@@ -82,7 +82,7 @@ def iterator_and_expected(request):
 def test_iterator_cannot_be_instantiated():
     """La interfaz abstracta no debe poder instanciarse."""
     with pytest.raises(TypeError):
-        Iterator()
+        Iterator()  # type: ignore
 
 
 def test_subclass_without_methods_stays_abstract():
@@ -92,7 +92,7 @@ def test_subclass_without_methods_stays_abstract():
         pass
 
     with pytest.raises(TypeError):
-        IncompleteIterator()
+        IncompleteIterator()  # type: ignore
 
 
 def test_table_scan_iterator_is_an_iterator():
