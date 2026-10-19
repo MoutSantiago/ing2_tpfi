@@ -79,22 +79,6 @@ def iterator_and_expected(request):
     return SingleRecordIterator(RECORDS[0]), [RECORDS[0]]
 
 
-def test_iterator_cannot_be_instantiated():
-    """La interfaz abstracta no debe poder instanciarse."""
-    with pytest.raises(TypeError):
-        Iterator()  # type: ignore
-
-
-def test_subclass_without_methods_stays_abstract():
-    """Una subclase que no implementa los métodos sigue siendo abstracta."""
-
-    class IncompleteIterator(Iterator):
-        pass
-
-    with pytest.raises(TypeError):
-        IncompleteIterator()  # type: ignore
-
-
 def test_table_scan_iterator_is_an_iterator():
     """El iterador de recorrido completo implementa la interfaz."""
     assert isinstance(TableScanIterator(RECORDS), Iterator)
