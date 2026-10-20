@@ -14,7 +14,7 @@ from IteratorCorporateData.app.exceptions import (
     DataAccessError,
     RecordNotFoundError,
 )
-from IteratorCorporateData.app.recordIterator import Iterator
+from IteratorCorporateData.app.record_iterator import Iterator
 from IteratorCorporateData.app.single_record_iterator import (
     SingleRecordIterator,
 )

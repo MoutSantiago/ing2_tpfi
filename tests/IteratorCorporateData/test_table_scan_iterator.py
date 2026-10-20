@@ -4,8 +4,8 @@ import pytest
 from botocore.exceptions import ClientError
 
 from IteratorCorporateData.app.exceptions import DataAccessError
-from IteratorCorporateData.app.recordIterator import Iterator
-from IteratorCorporateData.app.tableScanIterator import TableScanIterator
+from IteratorCorporateData.app.record_iterator import Iterator
+from IteratorCorporateData.app.table_scan_iterator import TableScanIterator
 
 
 class FakeTable:

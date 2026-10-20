@@ -7,7 +7,7 @@ respeten el contrato y que los errores de acceso a datos se propaguen.
 import pytest
 
 from IteratorCorporateData.app.exceptions import DataAccessError
-from IteratorCorporateData.app.recordIterator import Iterator
+from IteratorCorporateData.app.record_iterator import Iterator
 
 
 class TableScanIterator(Iterator):

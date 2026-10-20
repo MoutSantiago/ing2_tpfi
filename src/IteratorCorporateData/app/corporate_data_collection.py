@@ -1,5 +1,11 @@
 """Módulo colección concreta que crea iteradores sobre CorporateData.
 
+Implementa la interfaz Collection del patrón Iterator. Sabe qué iterador
+crear: si se pidió un id (--id) devuelve un SingleRecordIterator, en caso
+contrario un TableScanIterator.
+
+Patrón: Iterator
+
 Ingeniería de Software II - UADER FCyT (2026)
 Autores:
  - Laiño Valentino
@@ -12,11 +18,11 @@ import logging
 from typing import Any, Optional
 
 from IteratorCorporateData.app.iterable_collection import Collection
-from IteratorCorporateData.app.recordIterator import Iterator
+from IteratorCorporateData.app.record_iterator import Iterator
 from IteratorCorporateData.app.single_record_iterator import (
     SingleRecordIterator,
 )
-from IteratorCorporateData.app.tableScanIterator import TableScanIterator
+from IteratorCorporateData.app.table_scan_iterator import TableScanIterator
 
 logger = logging.getLogger(__name__)
 

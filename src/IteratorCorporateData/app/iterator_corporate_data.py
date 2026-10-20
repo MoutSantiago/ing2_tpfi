@@ -6,6 +6,8 @@ conoce las interfaces Collection e Iterator, por lo que no sabe si recorre
 toda la tabla o un único registro, ni cómo se accede a la base. Recibe sus
 dependencias ya construidas para poder reemplazarlas por mocks en los tests.
 
+Patrón: Iterator
+
 Ingeniería de Software II - UADER FCyT (2026)
 Autores:
  - Laiño Valentino
@@ -19,7 +21,7 @@ from typing import Any
 
 from IteratorCorporateData.app.iterable_collection import Collection
 from IteratorCorporateData.app.json_write import JsonWrite
-from IteratorCorporateData.app.recordIterator import Iterator
+from IteratorCorporateData.app.record_iterator import Iterator
 
 logger = logging.getLogger(__name__)
 

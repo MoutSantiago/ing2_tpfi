@@ -7,7 +7,7 @@ iterador no consulte la base de datos.
 """
 
 from IteratorCorporateData.app.iterable_collection import Collection
-from IteratorCorporateData.app.recordIterator import Iterator
+from IteratorCorporateData.app.record_iterator import Iterator
 
 
 class TableScanIterator(Iterator):

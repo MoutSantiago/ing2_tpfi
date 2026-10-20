@@ -1,5 +1,11 @@
 """Módulo iterador concreto que devuelve un único registro de CorporateData.
 
+Implementa la interfaz Iterator del patrón Iterator. Recupera el registro
+que se pide con el argumento --id mediante get_item sobre la tabla de
+DynamoDB.
+
+Patrón: Iterator
+
 Ingeniería de Software II - UADER FCyT (2026)
 Autores:
  - Laiño Valentino
@@ -18,7 +24,7 @@ from IteratorCorporateData.app.exceptions import (
     DataAccessError,
     RecordNotFoundError,
 )
-from IteratorCorporateData.app.recordIterator import Iterator
+from IteratorCorporateData.app.record_iterator import Iterator
 
 logger = logging.getLogger(__name__)
 

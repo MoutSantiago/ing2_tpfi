@@ -12,7 +12,7 @@ import os
 import pytest
 from botocore.exceptions import ClientError
 
-from IteratorCorporateData import iteratorCorporateData as entrypoint
+from IteratorCorporateData import iteratorcorporatedata as entrypoint
 from IteratorCorporateData.app.corporate_data_collection import (
     CorporateDataCollection,
 )
