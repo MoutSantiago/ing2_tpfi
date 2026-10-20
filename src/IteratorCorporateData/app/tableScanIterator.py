@@ -3,6 +3,7 @@
 import logging
 from typing import Any
 
+# pyrefly: ignore[missing-source-for-stubs]
 from botocore.exceptions import BotoCoreError, ClientError
 
 from IteratorCorporateData.app.exceptions import DataAccessError
