@@ -1,5 +1,12 @@
 """Módulo encargado de emitir el resultado por salida estándar en formato JSON.
 
+Escribe un único documento JSON con indentación de 2 espacios,
+codificación UTF-8 y sin escapar los caracteres no ASCII (por ejemplo,
+"Concepción del Uruguay"), de modo que la salida se pueda leer con un
+único json.loads.
+
+Patrón: Ninguno
+
 Ingeniería de Software II - UADER FCyT (2026)
 Autores:
  - Laiño Valentino
@@ -9,18 +16,15 @@ Copyright (c) 2026. Licencia MIT (ver LICENSE).
 """
 
 import json
+import logging
 from decimal import Decimal
 from typing import Any
 
+logger = logging.getLogger(__name__)
+
 
 class JsonWrite:
-    """Clase encargada de emitir el resultado por salida estándar.
-
-    Escribe un único documento JSON con indentación de 2 espacios,
-    codificación UTF-8 y sin escapar los caracteres no ASCII (por ejemplo,
-    "Concepción del Uruguay"), de modo que la salida se pueda leer con un
-    único json.loads.
-    """
+    """Clase encargada de emitir el resultado por salida estándar."""
 
     @staticmethod
     def write(result: Any) -> None:
@@ -34,6 +38,7 @@ class JsonWrite:
         Args:
             result (Any): Datos de entrada
         """
+        logger.debug("Serializando resultado a JSON")
         texto = json.dumps(
             result,
             default=JsonWrite._default,
@@ -63,6 +68,7 @@ class JsonWrite:
             if value == value.to_integral_value():
                 return int(value)
             return float(value)
+        logger.warning("Tipo no serializable a JSON: %s", type(value).__name__)
         raise TypeError(
             f"Object of type {type(value).__name__} is not JSON serializable"
         )

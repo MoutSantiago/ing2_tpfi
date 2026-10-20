@@ -10,11 +10,11 @@ from IteratorCorporateData.app.corporate_data_collection import (
     CorporateDataCollection,
 )
 from IteratorCorporateData.app.iterable_collection import Collection
-from IteratorCorporateData.app.recordIterator import Iterator
+from IteratorCorporateData.app.record_iterator import Iterator
 from IteratorCorporateData.app.single_record_iterator import (
     SingleRecordIterator,
 )
-from IteratorCorporateData.app.tableScanIterator import TableScanIterator
+from IteratorCorporateData.app.table_scan_iterator import TableScanIterator
 
 
 class FakeTable:

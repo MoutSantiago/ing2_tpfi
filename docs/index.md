@@ -11,6 +11,7 @@ Se implementan tres programas aplicativos en Python:
 - `singletonclient.py` — cliente que consulta o actualiza `CorporateData`.
 - `observerclient.py` — cliente que se suscribe y recibe notificaciones de cambios.
 - `singletonproxyobserver.py` — servidor de aplicaciones que opera como proxy, singleton y observer, generando pista de auditoría.
+- `iteratorcorporatedata.py` — programa que consulta la tabla `CorporateData` de AWS DynamoDB mediante el patrón Iterator.
 
 ## Contenido
 

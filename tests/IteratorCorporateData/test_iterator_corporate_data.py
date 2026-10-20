@@ -20,8 +20,8 @@ from IteratorCorporateData.app.iterator_corporate_data import (
     IteratorCorporateData,
 )
 from IteratorCorporateData.app.json_write import JsonWrite
-from IteratorCorporateData.app.recordIterator import Iterator
-from IteratorCorporateData.app.tableScanIterator import TableScanIterator
+from IteratorCorporateData.app.record_iterator import Iterator
+from IteratorCorporateData.app.table_scan_iterator import TableScanIterator
 
 RECORDS = [
     {"id": "registro-1", "nombre": "Ana"},

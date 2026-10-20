@@ -26,7 +26,7 @@ from typing import Any, Optional, Sequence
 
 # Agrega el directorio padre (src/) al path ANTES de los imports absolutos,
 # para que funcionen tanto al ejecutar el archivo directamente
-# (python3 iteratorCorporateData.py) como como módulo (-m).
+# (python3 itercorporatedata.py) como como módulo (-m).
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import boto3  # noqa: E402
@@ -104,6 +104,10 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
             "el id no puede ser vacío ni estar compuesto solo por espacios"
         )
 
+    logger.debug(
+        "Argumentos interpretados; id=%s verbose=%s", args.id, args.verbose
+    )
+
     return args
 
 
@@ -117,6 +121,7 @@ def configure_logging(verbose: bool) -> None:
         verbose: Si se debe activar el nivel DEBUG del paquete propio.
     """
     _configure_logging(verbose, LOGGER_NAME)
+    logger.debug("Logging configurado; verbose=%s", verbose)
 
 
 def _create_table() -> Any:
@@ -132,6 +137,7 @@ def _create_table() -> Any:
         DataAccessError: si falta la región, faltan las credenciales o no se
             pudo crear el recurso de DynamoDB.
     """
+    logger.debug("Verificando la configuración de AWS...")
     session = boto3.session.Session()
 
     if not session.region_name:
@@ -147,7 +153,7 @@ def _create_table() -> Any:
         )
 
     try:
-        return boto3.resource("dynamodb").Table(TABLE_NAME)
+        table = boto3.resource("dynamodb").Table(TABLE_NAME)
     except (
         NoRegionError,
         NoCredentialsError,
@@ -157,6 +163,9 @@ def _create_table() -> Any:
         raise DataAccessError(
             f"No se pudo acceder a DynamoDB: {error}"
         ) from error
+
+    logger.debug("Recurso Table de CorporateData creado")
+    return table
 
 
 def build_app(
@@ -216,11 +225,17 @@ def _describe_error(error: BaseException) -> str:
 
 
 def _report_error(message: str) -> None:
-    """Escribe un mensaje de error por error estándar.
+    """Escribe un mensaje de error por error estándar y lo registra en el log.
+
+    El mensaje se imprime por error estándar para que el JSON de la salida
+    estándar no se mezcle con el texto, y se registra con el logger del
+    paquete para que salga con el formato de la librería común
+    (shared.logger).
 
     Args:
         message: Texto que se debe informar.
     """
+    logger.error(message)
     print(message, file=sys.stderr)
 
 
@@ -246,6 +261,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         args = parse_args(argv)
         configure_logging(args.verbose)
 
+        logger.info("Consultando tabla %s...", TABLE_NAME)
         logger.debug("Construyendo la aplicación...")
         app = build_app(args.id)
 
@@ -269,6 +285,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         return 1
 
     except KeyboardInterrupt:
+        logger.warning("Ejecución cancelada por el usuario.")
         _report_error("Cancelado por el usuario.")
         return 1
 
