@@ -2,12 +2,12 @@
 
 Todos los cambios notables de este proyecto serán documentados en este archivo.
 
-## 0.4.0 - 2026-10-17
+## [1.0.0] - 2026-10-20
 
-## Added
+### Added
 
-- Finalización del SingletonClient.
-- Inicio del desarrollo del IteratorCorporateData.
+- Incorporación del programa `IteratorCorporateData`: consulta de la tabla `CorporateData` de AWS DynamoDB mediante el patrón Iterator, con entry point ejecutable como `python3 src/IteratorCorporateData/iteratorcorporatedata.py --id=<id> {-v}`.
+- Implementación de `IteratorCorporateData` (cliente del patrón Iterator), `CorporateDataCollection`, `TableScanIterator`, `SingleRecordIterator`, `Collection` e `Iterator` (interfaces), `JsonWrite` y excepciones propias.
 
 ## [0.3.0] - 2026-10-14
 

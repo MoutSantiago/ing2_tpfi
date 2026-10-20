@@ -307,6 +307,53 @@ La notificación debe aparecer en la terminal del cliente y guardarse en `notifi
 Get-Content notificaciones.json
 ```
 
+## Ejecutar el programa IteratorCorporateData
+
+El punto de entrada es
+`src/IteratorCorporateData/iteratorcorporatedata.py`, basado en `argparse` con las
+flags `--id` (id del registro a recuperar; omítelo para recorrer toda la tabla) y
+`-v/--v` (modo verbose). No usa servidor ni sockets: accede a la tabla
+`CorporateData` directamente con boto3, con las credenciales y la región ya
+configuradas.
+
+### Desde el directorio del paquete
+
+```sh
+cd src/IteratorCorporateData
+python3 itercorporatedata.py                   # recupera toda la tabla
+python3 itercorporatedata.py --id=registro-1   # recupera un registro puntual
+python3 itercorporatedata.py --id=registro-1 -v
+```
+
+### Como módulo
+
+```sh
+cd src
+python3 -m IteratorCorporateData.iteratorcorporatedata --id=registro-1 -v
+```
+
+Ver la ayuda de las flags:
+
+```sh
+python3 src/IteratorCorporateData/iteratorcorporatedata.py --help
+```
+
+### Códigos de salida
+
+| Código | Significado |
+|--------|-------------|
+| `0`    | Consulta completada (incluye la tabla vacía). |
+| `1`    | Error de ejecución (registro inexistente, falla de acceso a AWS, error de escritura, cancelación manual o error inesperado). |
+| `2`    | Argumentos malformados (lo devuelve `argparse` por defecto). |
+
+Los errores se informan con un mensaje claro por error estándar, nunca con un traceback.
+
+### Requisitos para arrancar
+
+- Credenciales AWS configuradas (`aws configure`) y región donde está la tabla
+  `CorporateData`.
+- La tabla `CorporateData` debe existir en DynamoDB antes de ejecutar el programa.
+
 ## Tests
 
 ```sh

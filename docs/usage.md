@@ -64,3 +64,23 @@ notificaciones se guardan dentro de un array JSON en ese archivo:
 
 Si el archivo apuntado por `-o` tiene el formato antiguo (una notificación JSON por línea), el
 cliente lo migra automáticamente al array.
+
+## Programa IteratorCorporateData
+
+Consulta la tabla `CorporateData` de AWS DynamoDB mediante el patrón Iterator:
+
+```sh
+python src/IteratorCorporateData/iteratorcorporatedata.py {--id=xxxxxxxxx} {-v}
+```
+
+Sin `--id` recupera todos los registros de la tabla; con `--id` recupera un registro
+puntual. El resultado se emite como un único documento JSON por salida estándar. La flag
+`-v` activa los mensajes `DEBUG` del programa.
+
+Códigos de salida:
+
+| Código | Significado |
+|--------|-------------|
+| `0`    | Consulta completada (incluye la tabla vacía). |
+| `1`    | Error de ejecución (registro inexistente, falla de acceso a AWS, error de escritura, cancelación manual o error inesperado). |
+| `2`    | Argumentos malformados (lo devuelve `argparse` por defecto). |
