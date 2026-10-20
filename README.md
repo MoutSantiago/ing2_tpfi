@@ -31,14 +31,21 @@ del paquete `platform`; el identificador de sesión de cada operación, de `uuid
 
 ## Estado del proyecto
 
-> **Estado actual: en desarrollo. Solo el servidor de aplicaciones está implementado.**
+> **Estado actual: en desarrollo. Servidor de aplicaciones y programa `IteratorCorporateData` implementados.**
 
 ### Componente `SingletonProxyObserverTPFI` — servidor (implementado)
 
-Es el único componente con código funcional en `src/`. Servidor TCP que opera
-simultáneamente como **proxy** (acceso a la base), **singleton** (conexión compartida a
-DynamoDB) y **observer** (notificación de cambios a los suscriptores), generando además
-el registro de auditoría.
+Servidor TCP que opera simultáneamente como **proxy** (acceso a la base), **singleton**
+(conexión compartida a DynamoDB) y **observer** (notificación de cambios a los
+suscriptores), generando además el registro de auditoría.
+
+### Componente `IteratorCorporateData` — consulta de datos (implementado)
+
+Programa que consulta la tabla `CorporateData` de AWS DynamoDB directamente con boto3
+(sin servidor ni sockets), aplicando el patrón **Iterator**. Recorre toda la tabla o un
+único registro (por `--id`) y emite el resultado en JSON por salida estándar. Su entry
+point es ejecutable como `python3 src/IteratorCorporateData/iteratorcorporatedata.py
+{--id=xxxxxxxxx} {-v}`.
 
 ### Componentes `SingletonClient` y `ObserverClient` — clientes (pendientes)
 
@@ -46,11 +53,12 @@ Los directorios `src/SingletonClient/` y `src/ObserverClient/` están reservados
 **no contienen implementación**. Los entry points `singletonclient.py` y
 `observerclient.py` quedan pendientes de desarrollo.
 
-| Programa                    | Acción                               | Estado          |
-| --------------------------- | ------------------------------------ | --------------- |
-| `singletonproxyobserver.py` | `get` / `set` / `list` / `subscribe` | ✅ Implementado |
-| `singletonclient.py`        | `get` / `set` / `list`               | ⏳ Pendiente    |
-| `observerclient.py`         | `subscribe`                          | ⏳ Pendiente    |
+| Programa                              | Acción                                      | Estado          |
+| ------------------------------------- | ------------------------------------------- | --------------- |
+| `singletonproxyobserver.py`           | `get` / `set` / `list` / `subscribe`        | ✅ Implementado |
+| `iteratorcorporatedata.py`            | Lectura de `CorporateData` (patrón Iterator)| ✅ Implementado |
+| `singletonclient.py`                  | `get` / `set` / `list`                      | ⏳ Pendiente    |
+| `observerclient.py`                   | `subscribe`                                 | ⏳ Pendiente    |
 
 #### Trabajo pendiente
 
@@ -130,6 +138,17 @@ ing2_tpfi/
 │   │       ├── observer/             # Patrón Observer
 │   │       ├── proxy/                # Patrón Proxy
 │   │       └── singleton/            # Patrón Singleton (DAOs)
+│   ├── IteratorCorporateData/        # Consulta de datos (implementado)
+│   │   ├── itercorporatedata.py      # Entry point
+│   │   └── app/
+│   │       ├── iterator_corporate_data.py  # Cliente del patrón Iterator
+│   │       ├── corporate_data_collection.py# Colección concreta
+│   │       ├── iterable_collection.py      # Interfaz Collection
+│   │       ├── record_iterator.py          # Interfaz Iterator
+│   │       ├── table_scan_iterator.py      # Iterador de toda la tabla
+│   │       ├── single_record_iterator.py   # Iterador de un registro
+│   │       ├── json_write.py               # Escritura de resultado JSON
+│   │       └── exceptions.py               # Excepciones propias
 │   ├── SingletonClient/              # ⏳ Pendiente
 │   └── ObserverClient/               # ⏳ Pendiente
 ├── tests/                            # Pytest (moto para emular DynamoDB)
@@ -160,11 +179,20 @@ La guía completa está en [`docs/installation.md`](docs/installation.md).
 
 ## Uso
 
-Servidor (único componente ejecutable por el momento):
+Servidor:
 
 ```sh
 python src/SingletonProxyObserverTPFI/singletonproxyobserver.py {-p=8080} {-v}
 ```
+
+Programa `IteratorCorporateData` (consulta de `CorporateData` en DynamoDB):
+
+```sh
+python src/IteratorCorporateData/iteratorcorporatedata.py {--id=xxxxxxxxx} {-v}
+```
+
+Sin `--id` recupera toda la tabla; con `--id` recupera un registro puntual. La flag
+`-v` activa los mensajes `DEBUG` del programa.
 
 Los clientes, cuando estén implementados, se invocarán como:
 
