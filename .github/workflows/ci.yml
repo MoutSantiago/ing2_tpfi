@@ -69,7 +69,7 @@ jobs:
 
   docs:
     # Corre en PRs hacia main y en cada push/merge a main (post-merge)
-    # Este job solo construye y guarda el artifact; nunca despliega
+    # Construye la documentación y la deja disponible como artifact descargable.
     if: github.base_ref == 'main' || github.ref == 'refs/heads/main'
     needs: [lint, security, tests] # solo si los tres anteriores pasaron
     runs-on: ubuntu-latest
@@ -86,27 +86,32 @@ jobs:
         with:
           name: docs
           path: docs/_build/html
-      # Empaqueta para Pages (lo usa docs-deploy, solo en main)
-      - uses: actions/upload-pages-artifact@v3
-        if: github.ref == 'refs/heads/main'
-        with:
-          path: docs/_build/html
 
-  docs-deploy:
-    # Despliegue real a GitHub Pages; solo post-merge a main, nunca en PRs
+  docs-save:
+    # Guarda la documentación construida en docs/build/ del repositorio
+    # solo tras el merge a main (push a refs/heads/main). Nunca en PRs.
     if: github.ref == 'refs/heads/main'
     needs: [docs]
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      contents: write
     concurrency:
-      group: docs-pages
+      group: docs-save
       cancel-in-progress: false
     steps:
-      - uses: actions/deploy-pages@v4
-        id: deployment
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: rm -rf docs/build && sphinx-build -b html docs docs/build
+      - run: touch docs/build/.nojekyll
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/build
+          git commit -m "chore: documentacion $(cat VERSION 2>/dev/null || echo latest) [skip ci]" && git push || echo "No hay cambios en la documentacion"
