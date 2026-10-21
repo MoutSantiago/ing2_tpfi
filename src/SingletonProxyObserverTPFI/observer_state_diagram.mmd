@@ -1,0 +1,9 @@
+```mermaid
+stateDiagram-v2
+    [*] --> SinSuscriptores
+    SinSuscriptores --> ConSuscriptores: subscribe()
+    ConSuscriptores --> Publicando: publish_change()
+    Publicando --> Notificando: notify_subscribers()
+    Notificando --> SinSuscriptores: fin
+    ConSuscriptores --> [*]: close_all()
+```
