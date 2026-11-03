@@ -31,7 +31,7 @@ del paquete `platform`; el identificador de sesión de cada operación, de `uuid
 
 ## Estado del proyecto
 
-> **Estado actual: en desarrollo. Servidor de aplicaciones y programa `IteratorCorporateData` implementados.**
+> **Estado actual: en desarrollo. Servidor de aplicaciones, programa `IteratorCorporateData` y clientes `SingletonClient`/`ObserverClient` implementados.**
 
 ### Componente `SingletonProxyObserverTPFI` — servidor (implementado)
 
@@ -47,18 +47,20 @@ Programa que consulta la tabla `CorporateData` de AWS DynamoDB directamente con 
 point es ejecutable como `python3 src/IteratorCorporateData/iteratorcorporatedata.py
 {--id=xxxxxxxxx} {-v}`.
 
-### Componentes `SingletonClient` y `ObserverClient` — clientes (pendientes)
+### Componentes `SingletonClient` y `ObserverClient` — clientes (implementados)
 
-Los directorios `src/SingletonClient/` y `src/ObserverClient/` están reservados pero aún
-**no contienen implementación**. Los entry points `singletonclient.py` y
-`observerclient.py` quedan pendientes de desarrollo.
+El cliente `SingletonClient` lee y valida `input.json` con `RequestLoader`, ejecuta un
+único intercambio TCP con el servidor y escribe la respuesta con `ResponseWriter`. El
+cliente `ObserverClient` se suscribe al servidor, reconecta cada intervalo configurable
+y escribe las notificaciones con `NotificationWriter`. Ambos incluyen sus entry points
+`singletonclient.py` y `observerclient.py`.
 
 | Programa                              | Acción                                      | Estado          |
 | ------------------------------------- | ------------------------------------------- | --------------- |
 | `singletonproxyobserver.py`           | `get` / `set` / `list` / `subscribe`        | ✅ Implementado |
 | `iteratorcorporatedata.py`            | Lectura de `CorporateData` (patrón Iterator)| ✅ Implementado |
-| `singletonclient.py`                  | `get` / `set` / `list`                      | ⏳ Pendiente    |
-| `observerclient.py`                   | `subscribe`                                 | ⏳ Pendiente    |
+| `singletonclient.py`                  | `get` / `set` / `list`                      | ✅ Implementado |
+| `observerclient.py`                   | `subscribe`                                 | ✅ Implementado |
 
 #### Trabajo pendiente
 
@@ -66,9 +68,6 @@ Los directorios `src/SingletonClient/` y `src/ObserverClient/` están reservados
       argumentos e imprime un mensaje; falta instanciar los DAOs, el
       `SubscriptionManager`, el `CorporateDataProxy` y el `Server`, y dejar el proceso
       sirviendo hasta `Ctrl+C`.
-- [ ] Implementar `SingletonClient` con los argumentos `-i`, `-o` y `-v`.
-- [ ] Implementar `ObserverClient` con los argumentos `-s`, `-p`, `-o` y `-v`,
-      incluyendo la reconexión cada 30 segundos (parametrizable).
 - [ ] Casos de prueba de aceptación de la sección _Validación y Verificación_ del
       enunciado (argumentos malformados, servidor caído, doble levantamiento del
       servidor, verificación de los patrones).
@@ -149,9 +148,22 @@ ing2_tpfi/
 │   │       ├── single_record_iterator.py   # Iterador de un registro
 │   │       ├── json_write.py               # Escritura de resultado JSON
 │   │       └── exceptions.py               # Excepciones propias
-│   ├── SingletonClient/              # ⏳ Pendiente
-│   └── ObserverClient/               # ⏳ Pendiente
-├── tests/                            # Pytest (moto para emular DynamoDB)
+│   ├── SingletonClient/              # Cliente `get`/`set`/`list`
+│   │   ├── singletonclient.py        # Entry point
+│   │   └── app/
+│   │       ├── exceptions.py         # Excepciones propias
+│   │       ├── request_loader.py     # Lectura y validación del archivo de entrada
+│   │       ├── response_writer.py    # Escritura de la respuesta
+│   │       ├── server_connection.py  # Conexión TCP
+│   │       └── singleton_client.py   # Orquestador del intercambio
+│   ├── ObserverClient/               # Cliente `subscribe`
+│   │   ├── observerclient.py         # Entry point
+│   │   └── app/
+│   │       ├── exceptions.py         # Excepciones propias
+│   │       ├── notification_writer.py# Escritura de notificaciones
+│   │       ├── observer_client.py    # Lógica de suscripción y reconexión
+│   │       └── server_connection.py  # Conexión TCP
+│   ├── tests/                            # Pytest (moto para emular DynamoDB)
 ├── docs/                             # Documentación Sphinx
 ├── scripts/                          # Utilidades de la cátedra
 ├── .github/workflows/ci.yml          # Pipeline de CI/CD
@@ -194,11 +206,11 @@ python src/IteratorCorporateData/iteratorcorporatedata.py {--id=xxxxxxxxx} {-v}
 Sin `--id` recupera toda la tabla; con `--id` recupera un registro puntual. La flag
 `-v` activa los mensajes `DEBUG` del programa.
 
-Los clientes, cuando estén implementados, se invocarán como:
+Los clientes se invocan como:
 
 ```sh
 python src/SingletonClient/singletonclient.py -i=input.json {-o=output.json} {-v}
-python src/ObserverClient/observerclient.py {-s=localhost} {-p=8080} {-o=output.json} {-v}
+python src/ObserverClient/observerclient.py {-s=localhost} {-p=8080} {-o=output.json} {-v} {-r=30}
 ```
 
 ## Desarrollo y calidad
