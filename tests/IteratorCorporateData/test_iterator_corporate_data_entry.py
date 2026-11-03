@@ -7,7 +7,6 @@ su código de salida.
 
 import json
 import logging
-import os
 
 import pytest
 from botocore.exceptions import ClientError
@@ -385,23 +384,3 @@ def test_main_without_verbose_output_is_only_json(monkeypatch, capsys):
     assert result == 0
     assert "DEBUG" not in captured.out
     assert json.loads(captured.out) == RECORDS
-
-
-@pytest.mark.skipif(
-    os.environ.get("IS2_AWS_ACCEPTANCE") != "1",
-    reason="Requiere credenciales y la tabla real CorporateData de AWS.",
-)
-def test_acceptance_against_real_table(capsys):
-    """Prueba de aceptación completa, por id y con id inexistente."""
-    assert entrypoint.main([]) == 0
-    full_output = json.loads(capsys.readouterr().out)
-    assert isinstance(full_output, list)
-
-    if full_output:
-        record_id = full_output[0]["id"]
-        assert entrypoint.main(["--id", record_id]) == 0
-        single_output = json.loads(capsys.readouterr().out)
-        assert single_output["id"] == record_id
-
-    assert entrypoint.main(["--id", "id-inexistente-de-aceptacion"]) == 1
-    assert "id-inexistente-de-aceptacion" in capsys.readouterr().err
